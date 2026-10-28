@@ -42,44 +42,45 @@
 const $ = s => document.querySelector(s);
 const form = $('#searchForm'), queryInput = $('#query'), results = $('#results'), status = $('#connectionStatus'), count = $('#resultCount'), button = $('#searchButton'), notice = $('#notice');
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-function wikiUrl(title){return 'https://wiki.warframe.com/w/'+encodeURIComponent(String(title||'').trim().replace(/\s+/g,'_'))}
-function asText(v){if(v==null)return '';if(typeof v==='string'||typeof v==='number')return String(v);if(Array.isArray(v))return v.map(asText).filter(Boolean).join(' · ');if(typeof v==='object')return v.name||v.title||v.item_name||v.mission||v.node||v.location||'';return ''}
+function wikiUrl(title){return 'https://wiki.warframe.com/w/Special:Search?search='+encodeURIComponent(String(title||'').trim())}
 function renderCard({title,source,url,detail,tag}){return '<article class="result"><div class="resulttop"><div><span class="tag">'+esc(tag||source)+'</span><h3>'+esc(title||'Untitled result')+'</h3><p>'+esc(detail||'Open the source for details.')+'</p></div><a href="'+esc(url||wikiUrl(title))+'" target="_blank" rel="noopener noreferrer">OPEN SOURCE ↗</a></div></article>'}
 function showState(title,body){results.innerHTML='<div class="empty"><strong>'+esc(title)+'</strong>'+esc(body)+'</div>';count.textContent='0 RESULTS'}
-function getDropDetails(item){
- const lines=[];
- const fields=[['Missions',item.missions||item.mission],['Relics',item.relics||item.relic],['Enemies',item.enemies||item.enemy],['Sources',item.sources||item.locations||item.drops]];
- for(const [label,val] of fields){const t=asText(val);if(t)lines.push(label+': '+t)}
- if(item.drop_chance||item.chance||item.rarity)lines.push('Drop: '+asText(item.drop_chance||item.chance||item.rarity));
- return lines.join('\n')||'Community drop-data match. Open the result to inspect its source details.';
+let indexPromise;
+async function loadIndex(){
+  if(!indexPromise) indexPromise=fetch('./data/search-index.json',{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error('Local search index returned HTTP '+r.status);return r.json()});
+  return indexPromise;
 }
-async function fetchWiki(q,limit){
- const u='https://wiki.warframe.com/w/api.php?'+new URLSearchParams({action:'query',list:'search',srsearch:q,srlimit:String(limit),format:'json',origin:'*'});
- const r=await fetch(u,{headers:{Accept:'application/json'}});if(!r.ok)throw new Error('Wiki returned HTTP '+r.status);
- const data=await r.json();if(data.error)throw new Error(data.error.info||'Wiki API error');
- return (data.query?.search||[]).map(x=>({title:x.title,source:'Warframe Wiki',tag:'WIKI',url:wikiUrl(x.title),detail:(x.snippet||'').replace(/<[^>]*>/g,'').replace(/&quot;/g,'"').replace(/&#039;/g,"'").replace(/&amp;/g,'&')}));
-}
-async function fetchDrops(q){
- const u='https://wfdrops.com/api/search?'+new URLSearchParams({term:q});
- const r=await fetch(u,{headers:{Accept:'application/json'}});if(!r.ok)throw new Error('Drop database returned HTTP '+r.status);
- const data=await r.json();
- const arr=Array.isArray(data)?data:(data.results||data.items||data.data||data.resources||[]);
- return arr.map(x=>({title:x.item_name||x.name||x.title||x.item||asText(x),source:'Community drop data',tag:'DROP DATA',url:wikiUrl(x.item_name||x.name||x.title||q),detail:getDropDetails(x)})).filter(x=>x.title);
+function score(record, q){
+  const title=record.title.toLowerCase(), detail=(record.detail||'').toLowerCase(), query=q.toLowerCase();
+  if(title===query)return 100;
+  if(title.startsWith(query))return 70;
+  if(title.includes(query))return 50;
+  if(query.split(/\s+/).every(t=>(title+' '+detail).includes(t)))return 20;
+  return 0;
 }
 async function search(q){
- const source=$('#source').value,limit=Number($('#limit').value);button.disabled=true;button.textContent='SEARCHING…';status.textContent='QUERY IN PROGRESS';notice.classList.add('hidden');notice.textContent='';showState('Searching the Origin System…','Checking selected sources. This can take a few seconds.');
- const jobs=[];
- if(source!=='drops')jobs.push({name:'Warframe Wiki',run:()=>fetchWiki(q,limit)});
- if(source!=='wiki')jobs.push({name:'Community drop data',run:()=>fetchDrops(q)});
- const settled=await Promise.allSettled(jobs.map(j=>j.run()));let all=[],errors=[];
- settled.forEach((res,i)=>{if(res.status==='fulfilled')all.push(...res.value);else errors.push(jobs[i].name+': '+(res.reason?.message||'request failed'))});
- const seen=new Set();all=all.filter(x=>{const k=(x.source+'|'+x.title).toLowerCase();if(seen.has(k))return false;seen.add(k);return true});
- all=all.slice(0,limit);
- if(all.length){results.innerHTML=all.map(renderCard).join('');count.textContent=all.length+' RESULT'+(all.length===1?'':'S');status.textContent='SEARCH COMPLETE · '+all.length+' FOUND'}
- else if(errors.length){showState('Could not load results','The selected source(s) did not return usable results. Check your connection or try another source.');status.textContent='SOURCE ERROR'}
- else{showState('No matches found','Try a shorter item name, a different spelling, or switch to “Wiki + drop data”.');status.textContent='QUERY COMPLETE · 0 FOUND'}
- if(errors.length){notice.textContent='Some sources could not be reached: '+errors.join(' · ');notice.classList.remove('hidden')}
- button.disabled=false;button.textContent='SEARCH ↗';
+  const source=$('#source').value, limit=Number($('#limit').value);
+  button.disabled=true;button.textContent='SEARCHING…';status.textContent='QUERY IN PROGRESS';notice.classList.add('hidden');notice.textContent='';
+  showState('Searching the Origin System…','Checking the locally hosted drop index.');
+  try{
+    const data=await loadIndex(), records=Array.isArray(data.records)?data.records:[];
+    let all=[];
+    if(source!=='wiki'){
+      all=records.map(r=>({...r,score:score(r,q)})).filter(r=>r.score>0).sort((a,b)=>b.score-a.score).slice(0,limit)
+        .map(r=>({title:r.title,source:'Official drop-table data mirror',tag:r.category||'DROP DATA',url:wikiUrl(r.title),detail:r.detail}));
+    }
+    if(source!=='drops'){
+      all.push({title:'Search the Warframe Wiki for “'+q+'”',source:'Warframe Wiki',tag:'WIKI SEARCH',url:wikiUrl(q),detail:'Open the Wiki search directly. This link works without a browser-side API request.'});
+    }
+    if(all.length){results.innerHTML=all.map(renderCard).join('');count.textContent=all.length+' RESULT'+(all.length===1?'':'S');status.textContent='SEARCH COMPLETE · '+all.length+' FOUND'}
+    else{showState('No matches found','Try a shorter item name, a different spelling, or switch to “Wiki + drop data”.');status.textContent='QUERY COMPLETE · 0 FOUND'}
+    if(source!=='wiki')notice.textContent='Drop data is mirrored into this site during deployment, avoiding browser cross-origin request failures. Wiki results open directly on the Wiki.';
+    else notice.textContent='Wiki search opens directly on the official community-maintained Wiki; the browser API is intentionally bypassed.';
+    notice.classList.remove('hidden');
+  }catch(e){
+    showState('Could not load the local search index','The deployment may still be rebuilding. Refresh this page in a minute and try again.');
+    status.textContent='INDEX ERROR';notice.textContent='Local index error: '+(e?.message||'unknown error');notice.classList.remove('hidden');
+  }finally{button.disabled=false;button.textContent='SEARCH ↗'}
 }
 form.addEventListener('submit',e=>{e.preventDefault();const q=queryInput.value.trim();if(!q){queryInput.focus();return}search(q)});
 document.querySelectorAll('[data-query]').forEach(b=>b.addEventListener('click',()=>{queryInput.value=b.dataset.query;search(b.dataset.query)}));
