@@ -9,8 +9,8 @@
 :root{color-scheme:dark;--bg:#0b0e14;--panel:#121824;--panel2:#171f2d;--line:#293449;--text:#eef3fb;--muted:#9ba9bf;--cyan:#73e0d0;--gold:#f0c777;--red:#ff9c9c}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 80% -10%,#1c3541 0,transparent 42%),radial-gradient(ellipse at 0 40%,#211c37 0,transparent 38%),var(--bg);color:var(--text);font:15px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;min-height:100vh}
 .shell{max-width:1040px;margin:auto;padding:30px 20px 54px}.eyebrow{font:700 11px/1.2 ui-monospace,monospace;letter-spacing:.18em;color:var(--cyan);text-transform:uppercase;display:flex;gap:9px;align-items:center}.dot{width:7px;height:7px;border-radius:50%;background:var(--cyan);box-shadow:0 0 12px var(--cyan)}h1{font-size:clamp(30px,5vw,48px);line-height:1.05;letter-spacing:-.04em;margin:16px 0 10px}.accent{color:var(--cyan)}.lede{color:var(--muted);max-width:660px;margin:0}.topline{display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap}.status{border:1px solid var(--line);border-radius:999px;padding:7px 11px;color:var(--muted);font:11px ui-monospace,monospace;letter-spacing:.06em}
-.panel{margin-top:27px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(145deg,rgba(22,30,44,.97),rgba(13,18,27,.97));box-shadow:0 22px 60px #0003;overflow:hidden}.panelhead{padding:19px 20px 0;display:flex;justify-content:space-between;align-items:center;gap:12px}.micro{font:700 11px ui-monospace,monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}.queryarea{padding:16px 20px 20px}.searchrow{display:flex;gap:10px}.searchwrap{flex:1;position:relative}.searchicon{position:absolute;left:15px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:19px}input,select,button{font:inherit}input{width:100%;background:#090d14;border:1px solid #354257;border-radius:12px;padding:15px 15px 15px 43px;color:var(--text);outline:none}input:focus,select:focus{border-color:var(--cyan);box-shadow:0 0 0 3px #73e0d018}button{cursor:pointer;border:0;border-radius:12px;padding:0 21px;font-weight:800;color:#071412;background:var(--cyan);transition:transform .15s,filter .15s}button:hover{filter:brightness(1.08);transform:translateY(-1px)}button:disabled{opacity:.55;cursor:wait;transform:none}.filters{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}select{background:#0b1019;border:1px solid var(--line);color:var(--muted);border-radius:9px;padding:9px 12px;max-width:100%}.hint{color:var(--muted);font-size:12px;margin-top:11px}.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}.chip{border:1px solid var(--line);border-radius:999px;padding:6px 11px;background:#ffffff05;color:#c7d4e7;font-size:12px;cursor:pointer}.chip:hover{border-color:var(--cyan);color:var(--cyan)}
-.resultshead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 20px;border-top:1px solid var(--line);background:#ffffff03}.count{font:11px ui-monospace,monospace;color:var(--muted)}.results{padding:14px 20px 20px;display:grid;gap:11px}.result{border:1px solid var(--line);border-radius:13px;background:#ffffff03;padding:15px 16px;transition:border-color .15s,background .15s}.result:hover{border-color:#4b6c7d;background:#ffffff06}.resulttop{display:flex;align-items:start;justify-content:space-between;gap:14px}.result h3{font-size:16px;margin:0 0 5px;line-height:1.3}.result p{color:var(--muted);font-size:13px;margin:0;white-space:pre-line;overflow-wrap:anywhere}.result a{color:var(--cyan);text-decoration:none;font-size:12px;white-space:nowrap}.result a:hover{text-decoration:underline}.tag{display:inline-block;border:1px solid #3a4b61;color:#b8c8dd;border-radius:5px;padding:2px 6px;font:10px ui-monospace,monospace;text-transform:uppercase;letter-spacing:.06em;margin-bottom:9px}.empty{padding:33px 18px;text-align:center;color:var(--muted)}.empty strong{display:block;color:var(--text);font-size:16px;margin-bottom:5px}.notice{margin:0 20px 18px;padding:12px 14px;border:1px solid #5a4930;background:#f0c7770a;border-radius:10px;color:#d9c7a6;font-size:12px}.footer{display:flex;justify-content:space-between;gap:15px;flex-wrap:wrap;margin-top:17px;color:var(--muted);font-size:12px}.footer a{color:var(--cyan);text-decoration:none}.footer a:hover{text-decoration:underline}.srclinks{display:flex;gap:14px;flex-wrap:wrap}.hidden{display:none!important}
+.panel{margin-top:27px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(145deg,rgba(22,30,44,.97),rgba(13,18,27,.97));box-shadow:0 22px 60px #0003;overflow:hidden}.panelhead{padding:19px 20px 0;display:flex;justify-content:space-between;align-items:center;gap:12px}.micro{font:700 11px ui-monospace,monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}.queryarea{padding:16px 20px 20px}.searchrow{display:flex;gap:10px}.searchwrap{flex:1;position:relative}.searchicon{position:absolute;left:15px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:19px}input,select,button{font:inherit}input{width:100%;background:#090d14;border:1px solid #354257;border-radius:12px;padding:15px 15px 15px 43px;color:var(--text);outline:none}input:focus,select:focus{border-color:var(--cyan);box-shadow:0 0 0 3px #73e0d018}button{cursor:pointer;border:0;border-radius:12px;padding:0 21px;font-weight:800;color:#071412;background:var(--cyan);transition:transform .15s,filter .15s}button:hover{filter:brightness(1.08);transform:translateY(-1px)}button:disabled{opacity:.55;cursor:wait;transform:none}.filters{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}select{background:#0b1019;border:1px solid var(--line);color:var(--muted);border-radius:9px;padding:9px 12px;max-width:100%}.hint{color:var(--muted);font-size:12px;margin-top:11px}.sortlabel{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px}.sortlabel select{color:var(--text)}.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}.chip{border:1px solid var(--line);border-radius:999px;padding:6px 11px;background:#ffffff05;color:#c7d4e7;font-size:12px;cursor:pointer}.chip:hover{border-color:var(--cyan);color:var(--cyan)}
+.resultshead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 20px;border-top:1px solid var(--line);background:#ffffff03}.count{font:11px ui-monospace,monospace;color:var(--muted)}.results{padding:14px 20px 20px;display:grid;gap:11px}.result{border:1px solid var(--line);border-radius:13px;background:#ffffff03;padding:15px 16px;transition:border-color .15s,background .15s}.result:hover{border-color:#4b6c7d;background:#ffffff06}.resulttop{display:flex;align-items:start;justify-content:space-between;gap:14px}.result h3{font-size:16px;margin:0 0 5px;line-height:1.3}.result p{color:#dce7f5;font-size:14px;line-height:1.65;margin:6px 0 0;white-space:pre-line;overflow-wrap:anywhere}.result p strong{color:var(--gold);font-weight:800}.detail-line{display:flex;gap:7px;align-items:flex-start;flex-wrap:wrap}.detail-chip{display:inline-flex;align-items:center;gap:5px;border:1px solid #354b60;background:#182637;border-radius:7px;padding:4px 8px;color:#dce7f5;font-size:12px}.detail-chip b{color:var(--gold)}.dropchance{border-color:#77633a;background:#2a2519;color:#fff0c9}.result a{color:var(--cyan);text-decoration:none;font-size:12px;white-space:nowrap}.result a:hover{text-decoration:underline}.tag{display:inline-block;border:1px solid #3a4b61;color:#b8c8dd;border-radius:5px;padding:2px 6px;font:10px ui-monospace,monospace;text-transform:uppercase;letter-spacing:.06em;margin-bottom:9px}.empty{padding:33px 18px;text-align:center;color:var(--muted)}.empty strong{display:block;color:var(--text);font-size:16px;margin-bottom:5px}.notice{margin:0 20px 18px;padding:12px 14px;border:1px solid #5a4930;background:#f0c7770a;border-radius:10px;color:#d9c7a6;font-size:12px}.footer{display:flex;justify-content:space-between;gap:15px;flex-wrap:wrap;margin-top:17px;color:var(--muted);font-size:12px}.footer a{color:var(--cyan);text-decoration:none}.footer a:hover{text-decoration:underline}.srclinks{display:flex;gap:14px;flex-wrap:wrap}.hidden{display:none!important}
 @media(max-width:620px){.shell{padding:23px 13px 35px}.searchrow{flex-direction:column}.searchrow button{padding:13px}.queryarea{padding:15px}.panelhead,.resultshead{padding-left:15px;padding-right:15px}.results{padding:12px 13px 15px}.resulttop{display:block}.result a{display:inline-block;margin-top:10px}.notice{margin:0 13px 14px}}
 </style>
 </head>
@@ -26,7 +26,7 @@
         <div class="searchrow"><div class="searchwrap"><span class="searchicon">⌕</span><input id="query" type="search" placeholder="Try “Vitality” or “Lith G14”" autocomplete="off" aria-label="Search Warframe items" /></div><button id="searchButton" type="submit">SEARCH ↗</button></div>
         <div class="filters">
           <select id="source" aria-label="Search sources"><option value="both">Wiki + drop data</option><option value="wiki">Wiki only</option><option value="drops">Drop data only</option></select>
-          <select id="limit" aria-label="Result count"><option value="6">6 results</option><option value="10" selected>10 results</option><option value="15">15 results</option></select>
+          <select id="limit" aria-label="Result count"><option value="6">6 results</option><option value="10" selected>10 results</option><option value="15">15 results</option></select><label class="sortlabel" for="sortOrder">Sort <select id="sortOrder" aria-label="Sort results"><option value="match">Best match</option><option value="chance-desc">Drop chance: high → low</option><option value="chance-asc">Drop chance: low → high</option></select></label>
         </div>
       </form>
       <div class="chips" aria-label="Example searches"><button class="chip" type="button" data-query="Vitality">Vitality</button><button class="chip" type="button" data-query="Lith G14">Lith G14</button><button class="chip" type="button" data-query="Orokin Cell">Orokin Cell</button><button class="chip" type="button" data-query="Neurodes">Neurodes</button></div>
@@ -43,46 +43,68 @@ const $ = s => document.querySelector(s);
 const form = $('#searchForm'), queryInput = $('#query'), results = $('#results'), status = $('#connectionStatus'), count = $('#resultCount'), button = $('#searchButton'), notice = $('#notice');
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function wikiUrl(title){return 'https://wiki.warframe.com/w/Special:Search?search='+encodeURIComponent(String(title||'').trim())}
-function renderCard({title,source,url,detail,tag}){return '<article class="result"><div class="resulttop"><div><span class="tag">'+esc(tag||source)+'</span><h3>'+esc(title||'Untitled result')+'</h3><p>'+esc(detail||'Open the source for details.')+'</p></div><a href="'+esc(url||wikiUrl(title))+'" target="_blank" rel="noopener noreferrer">OPEN SOURCE ↗</a></div></article>'}
+function renderCard(r){
+  const detail=r.detailHtml||esc(r.detail||'Open the source for details.');
+  return '<article class="result"><div class="resulttop"><div><span class="tag">'+esc(r.tag||r.source||'RESULT')+'</span><h3>'+esc(r.title||'Untitled result')+'</h3><p>'+detail+'</p></div><a href="'+esc(r.url||wikiUrl(r.title))+'" target="_blank" rel="noopener noreferrer">OPEN SOURCE ↗</a></div></article>';
+}
 function showState(title,body){results.innerHTML='<div class="empty"><strong>'+esc(title)+'</strong>'+esc(body)+'</div>';count.textContent='0 RESULTS'}
-let indexPromise;
+let indexPromise, lastResults=[];
 async function loadIndex(){
   if(!indexPromise) indexPromise=fetch('./data/search-index.json',{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error('Local search index returned HTTP '+r.status);return r.json()});
   return indexPromise;
 }
-function score(record, q){
-  const title=record.title.toLowerCase(), detail=(record.detail||'').toLowerCase(), query=q.toLowerCase();
+function score(record,q){
+  const title=(record.title||'').toLowerCase(), detail=(record.detail||'').toLowerCase(), query=q.toLowerCase().trim();
   if(title===query)return 100;
   if(title.startsWith(query))return 70;
   if(title.includes(query))return 50;
   if(query.split(/\s+/).every(t=>(title+' '+detail).includes(t)))return 20;
   return 0;
 }
+function sortResults(list){
+  const mode=$('#sortOrder').value, out=[...list];
+  if(mode==='chance-desc')out.sort((a,b)=>(b.chance??-1)-(a.chance??-1)||b.score-a.score);
+  else if(mode==='chance-asc')out.sort((a,b)=>(a.chance??Infinity)-(b.chance??Infinity)||b.score-a.score);
+  else out.sort((a,b)=>b.score-a.score);
+  return out;
+}
+function display(list){
+  lastResults=list;
+  const sorted=sortResults(list);
+  if(!sorted.length){showState('No matches found','Try a shorter item name or a different spelling.');return}
+  results.innerHTML=sorted.map(renderCard).join('');
+  count.textContent=sorted.length+' RESULT'+(sorted.length===1?'':'S');
+}
 async function search(q){
   const source=$('#source').value, limit=Number($('#limit').value);
   button.disabled=true;button.textContent='SEARCHING…';status.textContent='QUERY IN PROGRESS';notice.classList.add('hidden');notice.textContent='';
   showState('Searching the Origin System…','Checking the locally hosted drop index.');
   try{
-    const data=await loadIndex(), records=Array.isArray(data.records)?data.records:[];
-    let all=[];
+    const records=[];
     if(source!=='wiki'){
-      all=records.map(r=>({...r,score:score(r,q)})).filter(r=>r.score>0).sort((a,b)=>b.score-a.score).slice(0,limit)
-        .map(r=>({title:r.title,source:'Official drop-table data mirror',tag:r.category||'DROP DATA',url:wikiUrl(r.title),detail:r.detail}));
+      const data=await loadIndex(), all=Array.isArray(data.records)?data.records:[];
+      records.push(...all.map(r=>({...r,score:score(r,q)})).filter(r=>r.score>0)
+        .sort((a,b)=>b.score-a.score).slice(0,limit)
+        .map(r=>({title:r.title,source:'Drop data',tag:r.category||'DROP DATA',url:wikiUrl(r.title),detail:r.detail,detailHtml:r.detailHtml,chance:typeof r.chance==='number'?r.chance:null,score:r.score})));
     }
     if(source!=='drops'){
-      all.push({title:'Search the Warframe Wiki for “'+q+'”',source:'Warframe Wiki',tag:'WIKI SEARCH',url:wikiUrl(q),detail:'Open the Wiki search directly. This link works without a browser-side API request.'});
+      records.push({title:'Search the Warframe Wiki for “'+q+'”',source:'Warframe Wiki',tag:'WIKI SEARCH',url:wikiUrl(q),detail:'Open the Wiki search results for this query.',detailHtml:'<span class="detail-chip">📘 <b>Wiki</b> · Search results for '+esc(q)+'</span>',chance:null,score:1});
     }
-    if(all.length){results.innerHTML=all.map(renderCard).join('');count.textContent=all.length+' RESULT'+(all.length===1?'':'S');status.textContent='SEARCH COMPLETE · '+all.length+' FOUND'}
-    else{showState('No matches found','Try a shorter item name, a different spelling, or switch to “Wiki + drop data”.');status.textContent='QUERY COMPLETE · 0 FOUND'}
-    if(source!=='wiki')notice.textContent='Drop data is mirrored into this site during deployment, avoiding browser cross-origin request failures. Wiki results open directly on the Wiki.';
-    else notice.textContent='Wiki search opens directly on the official community-maintained Wiki; the browser API is intentionally bypassed.';
+    display(records);
+    status.textContent='SEARCH COMPLETE · '+records.length+' FOUND';
+    if(source==='drops')notice.textContent='Showing drop-table data only. Results are searchable locally; drop chances are shown where the source provides them.';
+    else if(source==='wiki')notice.textContent='Wiki only: use OPEN SOURCE to view the Wiki search directly. No drop-table results are included.';
+    else notice.textContent='Showing both drop-table matches and a direct Wiki search link. The drop table is mirrored into this site during deployment.';
     notice.classList.remove('hidden');
   }catch(e){
-    showState('Could not load the local search index','The deployment may still be rebuilding. Refresh this page in a minute and try again.');
+    showState('Could not load the local search index','The deployment may still be rebuilding. Refresh this page and try again.');
     status.textContent='INDEX ERROR';notice.textContent='Local index error: '+(e?.message||'unknown error');notice.classList.remove('hidden');
   }finally{button.disabled=false;button.textContent='SEARCH ↗'}
 }
 form.addEventListener('submit',e=>{e.preventDefault();const q=queryInput.value.trim();if(!q){queryInput.focus();return}search(q)});
 document.querySelectorAll('[data-query]').forEach(b=>b.addEventListener('click',()=>{queryInput.value=b.dataset.query;search(b.dataset.query)}));
+$('#source').addEventListener('change',()=>{if(queryInput.value.trim())search(queryInput.value.trim())});
+$('#limit').addEventListener('change',()=>{if(queryInput.value.trim())search(queryInput.value.trim())});
+$('#sortOrder').addEventListener('change',()=>display(lastResults));
 </script>
 </body></html>
