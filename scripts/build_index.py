@@ -38,7 +38,7 @@ except Exception as exc:
 
 records, seen = [], set()
 name_keys = ("itemName", "modName", "item_name", "item", "name", "title")
-skip_path_keys = {"missionRewards", "relics", "modLocations", "miscItems", "blueprintLocations", "transientRewards", "rewards", "drops", "items"}
+skip_path_keys = {"missionRewards", "modLocations", "miscItems", "blueprintLocations", "transientRewards", "rewards", "drops", "items"}
 context_labels = {
     "planet":"Planet", "mission":"Mission", "node":"Node", "gameMode":"Mode",
     "enemyName":"Enemy", "place":"Location", "objectiveName":"Objective",
