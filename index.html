@@ -44,7 +44,15 @@ const form = $('#searchForm'), queryInput = $('#query'), results = $('#results')
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function wikiUrl(title){return 'https://wiki.warframe.com/w/Special:Search?search='+encodeURIComponent(String(title||'').trim())}
 function renderCard(r){
-  const detail=r.detailHtml||esc(r.detail||'Open the source for details.');
+  let detail;
+  if(Array.isArray(r.details)&&r.details.length){
+    const chips=r.details.map(x=>'<span class="detail-chip">⌖ '+esc(x)+'</span>').join('');
+    const chance=typeof r.chance==='number'?'<span class="detail-chip dropchance">🎯 <b>Drop chance</b> '+esc(Number(r.chance.toFixed(4)))+'%</span>':'';
+    const rarity=r.rarity?'<span class="detail-chip">✦ <b>Rarity</b> '+esc(r.rarity)+'</span>':'';
+    detail='<div class="detail-line">'+chips+chance+rarity+'</div>';
+  } else {
+    detail=r.detailHtml||esc(r.detail||'Open the source for details.');
+  }
   return '<article class="result"><div class="resulttop"><div><span class="tag">'+esc(r.tag||r.source||'RESULT')+'</span><h3>'+esc(r.title||'Untitled result')+'</h3><p>'+detail+'</p></div><a href="'+esc(r.url||wikiUrl(r.title))+'" target="_blank" rel="noopener noreferrer">OPEN SOURCE ↗</a></div></article>';
 }
 function showState(title,body){results.innerHTML='<div class="empty"><strong>'+esc(title)+'</strong>'+esc(body)+'</div>';count.textContent='0 RESULTS'}
@@ -85,16 +93,16 @@ async function search(q){
       const data=await loadIndex(), all=Array.isArray(data.records)?data.records:[];
       records.push(...all.map(r=>({...r,score:score(r,q)})).filter(r=>r.score>0)
         .sort((a,b)=>b.score-a.score).slice(0,limit)
-        .map(r=>({title:r.title,source:'Drop data',tag:r.category||'DROP DATA',url:wikiUrl(r.title),detail:r.detail,detailHtml:r.detailHtml,chance:typeof r.chance==='number'?r.chance:null,score:r.score})));
+        .map(r=>({title:r.title,source:'Drop data',tag:r.category||'DROP DATA',url:wikiUrl(r.title),detail:r.detail,details:r.details,rarity:r.rarity,chance:typeof r.chance==='number'?r.chance:null,score:r.score})));
     }
     if(source!=='drops'){
       records.push({title:'Search the Warframe Wiki for “'+q+'”',source:'Warframe Wiki',tag:'WIKI SEARCH',url:wikiUrl(q),detail:'Open the Wiki search results for this query.',detailHtml:'<span class="detail-chip">📘 <b>Wiki</b> · Search results for '+esc(q)+'</span>',chance:null,score:1});
     }
     display(records);
     status.textContent='SEARCH COMPLETE · '+records.length+' FOUND';
-    if(source==='drops')notice.textContent='Showing drop-table data only. Results are searchable locally; drop chances are shown where the source provides them.';
-    else if(source==='wiki')notice.textContent='Wiki only: use OPEN SOURCE to view the Wiki search directly. No drop-table results are included.';
-    else notice.textContent='Showing both drop-table matches and a direct Wiki search link. The drop table is mirrored into this site during deployment.';
+    if(source==='drops')notice.textContent='Drop data only · source locations and chances are shown when available.';
+    else if(source==='wiki')notice.textContent='Wiki only · no drop-table matches are included.';
+    else notice.textContent='Both sources · drop-table matches plus a direct Wiki search link.';
     notice.classList.remove('hidden');
   }catch(e){
     showState('Could not load the local search index','The deployment may still be rebuilding. Refresh this page and try again.');
