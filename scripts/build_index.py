@@ -4,7 +4,8 @@ import json, os, urllib.request
 
 URL = "https://raw.githubusercontent.com/WFCD/warframe-drop-data/main/data/all.json"
 os.makedirs("data", exist_ok=True)
-request = urllib.request.Request(URL, headers={"User-Agent": "Warframe-Farm-Finder/1.0", "Accept": "application/json"})\nwith urllib.request.urlopen(request, timeout=120) as response:
+request = urllib.request.Request(URL, headers={"User-Agent": "Warframe-Farm-Finder/1.0", "Accept": "application/json"})
+with urllib.request.urlopen(request, timeout=120) as response:
     data = json.load(response)
 
 records = []
