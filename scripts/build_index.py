@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 
 DROP_URL = "https://raw.githubusercontent.com/WFCD/warframe-drop-data/main/data/all.json"
 MARKET_URL = "https://api.warframe.market/v2/items"
+WIKI_API = "https://wiki.warframe.com/w/api.php"
 ASSET_BASE = "https://warframe.market/static/assets/"
 os.makedirs("data", exist_ok=True)
 
@@ -130,6 +131,41 @@ def walk(obj, path=None, section=None):
         for value in obj: walk(value, path, section)
 
 walk(data)
+
+# Fill thumbnail gaps (especially non-Prime parts) with page thumbnails from the official community Wiki.
+# Query in batches at build time so the browser never needs cross-origin requests.
+def fill_wiki_thumbnails():
+    missing = [r for r in records if not r.get("image")]
+    titles = list(dict.fromkeys(r["title"] for r in missing if r.get("title")))
+    found = {}
+    for start in range(0, len(titles), 40):
+        batch = titles[start:start+40]
+        params = urllib.parse.urlencode({
+            "action":"query", "format":"json", "prop":"pageimages",
+            "piprop":"thumbnail", "pithumbsize":160, "redirects":1,
+            "titles":"|".join(batch)
+        })
+        try:
+            response = fetch_json(WIKI_API + "?" + params, timeout=25)
+            for page in response.get("query", {}).get("pages", {}).values():
+                title = page.get("title")
+                thumb = page.get("thumbnail", {}).get("source")
+                if title and thumb:
+                    found[" ".join(title.casefold().split())] = thumb
+        except Exception as exc:
+            print(f"Wiki thumbnail batch skipped: {exc}")
+    for r in missing:
+        key = " ".join(r["title"].casefold().split())
+        if key in found:
+            r["image"] = found[key]
+    print(f"Filled {sum(1 for r in records if r.get('image'))} total record thumbnails using Market + Wiki")
+
+try:
+    import urllib.parse
+    fill_wiki_thumbnails()
+except Exception as exc:
+    print(f"Optional Wiki thumbnails unavailable: {exc}")
+
 with open("data/search-index.json","w",encoding="utf-8") as f:
     json.dump({"generatedAt":datetime.now(timezone.utc).isoformat(),"records":records},f,ensure_ascii=False,separators=(",",":"))
 print(f"Indexed {len(records)} drop records")
