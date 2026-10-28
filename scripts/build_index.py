@@ -2,9 +2,9 @@
 """Build a compact, same-origin search index from WFCD's published drop tables."""
 import json, os, urllib.request
 
-URL = "https://drops.warframestat.us/data/all.json"
+URL = "https://raw.githubusercontent.com/WFCD/warframe-drop-data/main/data/all.json"
 os.makedirs("data", exist_ok=True)
-with urllib.request.urlopen(URL, timeout=60) as response:
+request = urllib.request.Request(URL, headers={"User-Agent": "Warframe-Farm-Finder/1.0", "Accept": "application/json"})\nwith urllib.request.urlopen(request, timeout=120) as response:
     data = json.load(response)
 
 records = []
