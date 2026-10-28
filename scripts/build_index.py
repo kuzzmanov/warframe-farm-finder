@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 
 DROP_URL = "https://raw.githubusercontent.com/WFCD/warframe-drop-data/main/data/all.json"
 MARKET_URL = "https://api.warframe.market/v2/items"
-WIKI_API = "https://wiki.warframe.com/w/api.php"
+WIKI_API = "https://wiki.warframe.com/api.php"
 ASSET_BASE = "https://warframe.market/static/assets/"
 os.makedirs("data", exist_ok=True)
 
@@ -89,7 +89,7 @@ def add(title, details, chance=None, rarity=None, category="DROP DATA"):
     seen.add(key)
     image = image_by_name.get(" ".join(title.casefold().split()))
     records.append({
-        "title":title, "details":compact, "chance":chance_num, "rarity":clean(rarity),
+        "title":title, "details":compact, "detailItems":[{"label":label,"value":clean(value)} for label,value in details if clean(value)], "chance":chance_num, "rarity":clean(rarity),
         "category":category, "relic":relic_name, "refinement":refinement, "image":image,
         "detail":" · ".join(compact + ([f"Chance {chance_num:g}%"] if chance_num is not None else []) + ([clean(rarity)] if rarity else []))
     })
