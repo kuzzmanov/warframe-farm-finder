@@ -22,7 +22,7 @@ try:
             i18n = obj.get("i18n")
             en = i18n.get("en") if isinstance(i18n, dict) else None
             if isinstance(en, dict) and en.get("name"):
-                path = en.get("thumb") or en.get("icon")
+                path = en.get("subIcon") or en.get("thumb") or en.get("icon")
                 if path:
                     image_by_name[" ".join(en["name"].casefold().split())] = path if str(path).startswith("http") else ASSET_BASE + str(path).lstrip("/")
             for value in obj.values():
@@ -67,12 +67,22 @@ def add(title, details, chance=None, rarity=None, category="DROP DATA"):
     try: chance_num = float(chance) if chance is not None else None
     except (TypeError, ValueError): chance_num = None
     relic_name, refinement = None, None
-    for fragment in compact:
-        match = relic_pattern.search(fragment)
-        if match:
-            relic_name = f"{match.group(1).title()} {match.group(2).upper()}"
-            refinement = (match.group(3) or "Intact").title()
-            break
+    # WFCD relic entries store tier, relicName, and state as separate fields.
+    # Read those structured labels first; then fall back to parsing a combined path fragment.
+    detail_map = {label.casefold(): clean(value) for label, value in details}
+    tier_value = detail_map.get("tier", "")
+    relic_value = detail_map.get("relic", "")
+    state_value = detail_map.get("state", "")
+    if tier_value and relic_value and state_value.casefold() in {"intact", "exceptional", "flawless", "radiant"}:
+        relic_name = f"{tier_value.title()} {relic_value.upper()}"
+        refinement = state_value.title()
+    else:
+        for fragment in compact:
+            match = relic_pattern.search(fragment)
+            if match:
+                relic_name = f"{match.group(1).title()} {match.group(2).upper()}"
+                refinement = (match.group(3) or "Intact").title()
+                break
     key = (title.casefold(), tuple(x.casefold() for x in compact), chance_num, clean(rarity).casefold())
     if key in seen: return
     seen.add(key)
@@ -86,6 +96,18 @@ def add(title, details, chance=None, rarity=None, category="DROP DATA"):
 def walk(obj, path=None, section=None):
     path = list(path or [])
     if isinstance(obj, dict):
+        # Relic rewards are nested under {tier, relicName, state, rewards}.
+        # Index each reward with those labels instead of skipping the relic subtree.
+        if (isinstance(obj.get("tier"), str) and isinstance(obj.get("relicName"), str)
+                and isinstance(obj.get("state"), str) and isinstance(obj.get("rewards"), list)):
+            relic_details = path + [("Tier", obj["tier"]), ("Relic", obj["relicName"]), ("State", obj["state"])]
+            for reward in obj["rewards"]:
+                if isinstance(reward, dict):
+                    reward_title = next((reward.get(k) for k in name_keys if isinstance(reward.get(k), str) and reward.get(k).strip()), None)
+                    if reward_title:
+                        add(reward_title, relic_details, reward.get("chance", reward.get("dropChance", reward.get("dropChancePercent"))),
+                            reward.get("rarity"), "RELIC")
+            return
         details = [(context_labels[key], value) for key, value in obj.items()
                    if key in context_labels and isinstance(value, (str, int, float))]
         title = next((obj.get(k) for k in name_keys if isinstance(obj.get(k), str) and obj.get(k).strip()), None)
