@@ -14,8 +14,8 @@
 
 /* Four purpose-built result card layouts */
 .result{padding:16px 17px}
-.resultlayout{grid-template-columns:92px minmax(0,1fr);align-items:start}
-.resultvisual{align-self:start;display:flex;align-items:center;justify-content:center}
+.resultlayout{grid-template-columns:minmax(0,1fr);gap:7px;align-items:start}
+.resultvisual{width:100%;align-self:start;display:flex;align-items:center;justify-content:center}
 .resultmain{align-self:stretch;justify-content:center}
 .itemthumb{width:84px;height:84px}
 .result--regular{border-color:#477d68;background:linear-gradient(110deg,#12271f,#111722 48%,#ffffff03)}
@@ -55,9 +55,9 @@
 .source-meta{font-size:11px;color:#9ba9bf;margin-top:2px}
 .source-chance{font-size:12px;font-weight:850;color:#ffe29a;white-space:nowrap}
 .wiki-excerpt{font-size:13px!important;color:#bdcbe0!important;margin:8px 0 0!important;line-height:1.55!important}
-@media(max-width:620px){.resultlayout{grid-template-columns:68px minmax(0,1fr);gap:10px}.itemthumb{width:64px;height:64px}.result{padding:13px}.focus-chance{font-size:13px}}
+@media(max-width:620px){.itemthumb{width:64px;height:64px}.result{padding:13px}.focus-chance{font-size:13px}}
 
-@media(max-width:620px){.resultlayout{grid-template-columns:68px minmax(0,1fr);gap:10px}.itemthumb{width:64px;height:64px}.shell{padding:23px 13px 35px}.searchrow{flex-direction:column}.searchrow button{padding:13px}.queryarea{padding:15px}.panelhead,.resultshead{padding-left:15px;padding-right:15px}.results{padding:12px 13px 15px}.resulttop{display:block}.result a{display:inline-block;margin-top:10px}.notice{margin:0 13px 14px}}
+@media(max-width:620px){.itemthumb{width:64px;height:64px}.shell{padding:23px 13px 35px}.searchrow{flex-direction:column}.searchrow button{padding:13px}.queryarea{padding:15px}.panelhead,.resultshead{padding-left:15px;padding-right:15px}.results{padding:12px 13px 15px}.resulttop{display:block}.result a{display:inline-block;margin-top:10px}.notice{margin:0 13px 14px}}
 </style>
 </head>
 <body>
@@ -161,9 +161,11 @@ function renderSourceRows(sources){
  return sources.map(r=>{
   const p=sourceParts(r),chance=chanceText(r);
   const title=[p.planet,p.main].filter(Boolean).join(' · ');
-  const rotations=r._groupedRotations?.size?'Rotation '+[...r._groupedRotations].sort().join(', '):'';
+  const rotations=r._groupedRotations?.size?'Rot '+[...r._groupedRotations].sort().join('/') :'';
   const meta=[p.mission,...p.extras.filter(x=>x!==p.mission&&x!==detailValue(r,'rotation')&&!/^rotation\s/i.test(x)),rotations].filter(Boolean).join(' · ');
-  return '<div class="source-row"><div><div class="source-location">'+esc(title||'Location not specified')+'</div>'+(meta?'<div class="source-meta">'+esc(meta)+'</div>':'')+'</div>'+(chance?'<div class="source-chance">'+esc(chance)+'</div>':'')+'</div>';
+  const enemyLocation=[p.planet,p.node].filter(Boolean).join(' – ')||p.location||p.place||'';
+  const sourceTitle=p.enemy?p.enemy+' / '+(enemyLocation||'Location not listed'):title||'Location not specified';
+  return '<div class="source-row"><div><div class="source-location">'+esc(sourceTitle)+'</div>'+(meta?'<div class="source-meta">'+esc(meta)+'</div>':'')+'</div>'+(chance?'<div class="source-chance">'+esc(chance)+'</div>':'')+'</div>';
  }).join('');
 }
 function renderCard(r){
@@ -188,8 +190,8 @@ function renderCard(r){
   const ordered=[...sources].sort((a,b)=>(b.chance??-1)-(a.chance??-1));
   const primary=ordered[0]||r,p=sourceParts(primary),chance=chanceText(primary);
   if(kind==='regular'){
-   const place=p.planet||p.place||'Location not listed';
-   const main=p.main||'Drop source not listed';
+   const place=p.enemy?'Enemy drop':p.planet||p.place||p.location||'Location not listed';
+   const main=p.enemy?p.enemy+' / '+([p.planet,p.node].filter(Boolean).join(' – ')||p.location||p.place||'Location not listed'):p.main||'Drop source not listed';
    const mission=p.mission;
    content='<div class="card-focus"><div class="focus-primary"><div class="focus-eyebrow">'+esc(place)+'</div><div class="focus-name">'+esc(main)+'</div>'+(mission?'<div class="focus-secondary"><span class="refinement ref-flawless">'+esc(mission)+'</span></div>':'')+'</div>'+(chance?'<span class="focus-chance">'+esc(chance)+' drop chance</span>':'')+'</div>';
   }else{
@@ -205,7 +207,7 @@ function renderCard(r){
  }
  const kindLabel={prime:'PRIME PART',regular:'REGULAR DROP',resource:'RESOURCE',wiki:'WARFRAME WIKI'}[kind];
  const heading=kind==='wiki'?'<h3 class="result-heading"><a class="wiki-result-link" href="'+esc(r.url||wikiUrl(r.wikiQuery||r.title))+'" target="_blank" rel="noopener noreferrer">'+title+'</a></h3>':'<h3 class="result-heading">'+title+'</h3>';
- return '<article class="result result--'+kind+'" data-result-title="'+esc(r.title||'')+'" data-wiki-query="'+esc(r.wikiQuery||'')+'"><div class="resultlayout"><div class="resultvisual">'+thumb+'</div><div class="resultmain"><div class="result-kind">'+kindLabel+'</div>'+heading+content+'</div></div></article>';
+ return '<article class="result result--'+kind+'" data-result-title="'+esc(r.title||'')+'" data-wiki-query="'+esc(r.wikiQuery||'')+'"><div class="resultlayout"><div class="resultvisual">'+thumb+'</div><div class="resultmain">'+heading+'<div class="result-kind">'+kindLabel+'</div>'+content+'</div></div></article>';
 }
 async function lookupWikiPage(title){
  const params=new URLSearchParams({action:'query',format:'json',origin:'*',prop:'pageimages|info|extracts',inprop:'url',piprop:'thumbnail',pithumbsize:'160',exintro:'1',explaintext:'1',exchars:'220',redirects:'1',titles:title});
