@@ -14,11 +14,13 @@
 
 /* Four purpose-built result card layouts */
 .result{padding:16px 17px}
-.resultlayout{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
-.resulthead{width:max-content;max-width:100%}
-.resultvisual{width:100%;align-self:start;display:flex;align-items:center;justify-content:center}
-.resultmain{width:100%;align-self:stretch;justify-content:center}
-.resulthead .result-heading{text-align:center}
+.resultlayout{display:flex;flex-direction:column;align-items:stretch;gap:12px}
+.resulthead{display:grid;grid-template-columns:84px minmax(0,1fr);align-items:center;gap:14px;width:100%;min-width:0}
+.resultvisual{width:84px;height:84px;display:flex;align-items:center;justify-content:center}
+.resultheadmeta{min-width:0}
+.resulthead .result-heading{text-align:left;margin:0 0 5px}
+.resulthead .result-kind{margin:0}
+.resultmain{width:100%;min-width:0;align-self:stretch;justify-content:center}
 .itemthumb{width:84px;height:84px}
 .result--regular{border-color:#477d68;background:linear-gradient(110deg,#12271f,#111722 48%,#ffffff03)}
 .result--prime{border-color:#92753e;background:linear-gradient(110deg,#2a2316,#151923 48%,#ffffff03)}
@@ -57,7 +59,7 @@
 .source-meta{font-size:11px;color:#9ba9bf;margin-top:2px}
 .source-chance{font-size:12px;font-weight:850;color:#ffe29a;white-space:nowrap}
 .wiki-excerpt{font-size:13px!important;color:#bdcbe0!important;margin:8px 0 0!important;line-height:1.55!important}
-@media(max-width:620px){.itemthumb{width:64px;height:64px}.result{padding:13px}.focus-chance{font-size:13px}}
+@media(max-width:620px){.itemthumb{width:64px;height:64px}.result{padding:13px}.resulthead{grid-template-columns:64px minmax(0,1fr);gap:12px}.resultvisual{width:64px;height:64px}.focus-chance{font-size:13px}}
 
 @media(max-width:620px){.itemthumb{width:64px;height:64px}.shell{padding:23px 13px 35px}.searchrow{flex-direction:column}.searchrow button{padding:13px}.queryarea{padding:15px}.panelhead,.resultshead{padding-left:15px;padding-right:15px}.results{padding:12px 13px 15px}.resulttop{display:block}.result a{display:inline-block;margin-top:10px}.notice{margin:0 13px 14px}}
 </style>
@@ -268,7 +270,7 @@ function renderCard(r){
  }
  const kindLabel={prime:'PRIME PART',regular:'REGULAR DROP',resource:'RESOURCE',wiki:'WARFRAME WIKI'}[kind];
  const heading=kind==='wiki'?'<h3 class="result-heading"><a class="wiki-result-link" href="'+esc(r.url||wikiUrl(r.wikiQuery||r.title))+'" target="_blank" rel="noopener noreferrer">'+title+'</a></h3>':'<h3 class="result-heading">'+title+'</h3>';
- return '<article class="result result--'+kind+'" data-result-title="'+esc(r.title||'')+'" data-wiki-query="'+esc(r.wikiQuery||'')+'"><div class="resultlayout"><div class="resulthead"><div class="resultvisual">'+thumb+'</div>'+heading+'</div><div class="resultmain"><div class="result-kind">'+kindLabel+'</div>'+content+'</div></div></article>';
+ return '<article class="result result--'+kind+'" data-result-title="'+esc(r.title||'')+'" data-wiki-query="'+esc(r.wikiQuery||'')+'"><div class="resultlayout"><div class="resulthead"><div class="resultvisual">'+thumb+'</div><div class="resultheadmeta">'+heading+'<div class="result-kind">'+kindLabel+'</div></div></div><div class="resultmain">'+content+'</div></div></article>';
 }
 async function lookupWikiPage(title){
  const params=new URLSearchParams({action:'query',format:'json',origin:'*',prop:'pageimages|info|extracts',inprop:'url',piprop:'thumbnail',pithumbsize:'160',exintro:'1',explaintext:'1',exchars:'220',redirects:'1',titles:title});

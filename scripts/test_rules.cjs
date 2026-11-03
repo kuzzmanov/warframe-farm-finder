@@ -46,6 +46,7 @@ assert.ok(fallbackImage('resource').startsWith('data:image/svg+xml,'), 'missing 
 const card = renderCard({ title: 'Neurodes', category: 'RESOURCE' });
 assert.match(card, /class="itemthumb thumb-resource"/);
 assert.ok(card.indexOf('class="resultvisual"') < card.indexOf('class="result-heading"'), 'image precedes the title');
+assert.ok(card.indexOf('class="result-heading"') < card.indexOf('class="result-kind"'), 'title and result type are in the image header');
 for (const result of [
   { title:'Redirection', category:'DROP DATA' },
   { title:'Paris Prime Blueprint', relic:'Lith P1' },
@@ -53,14 +54,15 @@ for (const result of [
 ]) {
   const output=renderCard(result);
   assert.ok(output.indexOf('class="resultvisual"') < output.indexOf('class="result-heading"'), `${result.title} keeps its image above its title`);
+  assert.ok(output.indexOf('class="result-heading"') < output.indexOf('class="result-kind"'), `${result.title} places its result type beside the image`);
 }
 assert.match(renderCard({title:'Redirection',detailItems:[{label:'Enemy',value:'Scavenger Drone'},{label:'Planet',value:'Earth'},{label:'Node',value:'Coba'}]}),/Scavenger Drone \/ Earth – Coba/);
 const mappedEnemy=renderCard({title:'Redirection',detailItems:[{label:'Enemy',value:'Scavenger Drone'}],enemyLocations:{planets:['Earth','Deimos'],tileSets:['Plains of Eidolon']}});
 assert.match(mappedEnemy,/Scavenger Drone \/ Earth, Deimos \+1 more/);
 assert.match(mappedEnemy,/View all 3 enemy locations/);
 assert.match(mappedEnemy,/Plains of Eidolon/);
-assert.match(html, /\.resulthead\{width:max-content/);
-assert.match(html, /\.resulthead \.result-heading\{text-align:center/);
+assert.match(html, /\.resulthead\{display:grid;grid-template-columns:84px minmax\(0,1fr\)/);
+assert.match(html, /\.resulthead \.result-heading\{text-align:left/);
 const enemyRows = renderSourceRows([{ title:'Redirection', chance:2, detailItems:[{label:'Enemy',value:'Crewman'},{label:'Planet',value:'Earth'},{label:'Node',value:'Coba'}] }]);
 assert.match(enemyRows, /Crewman \/ Earth – Coba/);
 assert.match(renderSourceRows([{title:'Redirection',detailItems:[{label:'Enemy',value:'Crewman'}]}]), /Crewman \/ Location not listed/);
