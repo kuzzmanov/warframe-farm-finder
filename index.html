@@ -129,7 +129,7 @@ function renderCard(r){
   const e=get(ds,['enemyname','enemy']);
   const m=get(ds,['mission','gamemode','mode']);
   const l=get(ds,['place','location','node','objective','objectivename','source']);
-  return [p,e||l,m].filter(Boolean).filter((x,i,a)=>a.findIndex(y=>String(y).toLowerCase()===String(x).toLowerCase())===i).join(' · ')||v.details?.join(' · ')||'Source details unavailable';
+  const fallbackDetails=Array.isArray(v.details)?v.details.filter(Boolean).join(' · '):(typeof v.details==='string'?v.details:''); return [p,e||l,m].filter(Boolean).filter((x,i,a)=>a.findIndex(y=>String(y).toLowerCase()===String(x).toLowerCase())===i).join(' · ')||fallbackDetails||'Source details unavailable';
  };
  const sourceRows=items=>items.map(v=>'<div class="chance-row"><span class="chance-row-location">'+esc(sourceSummary(v))+'</span><span class="chance-row-right">'+(v.rarity?'<span class="rarity-label">'+esc(v.rarity)+'</span>':'')+chanceBadge(v)+'</span></div>').join('');
  let body='',tag='';
@@ -234,7 +234,7 @@ function groupDropSources(list){
  return out;
 }
 function sortResults(list){const mode=$('#sortOrder').value,out=[...list];if(mode==='chance-desc')out.sort((a,b)=>(b.chance??-1)-(a.chance??-1)||b.score-a.score);else if(mode==='chance-asc')out.sort((a,b)=>(a.chance??Infinity)-(b.chance??Infinity)||b.score-a.score);else out.sort((a,b)=>b.score-a.score);return out}
-function display(list){lastResults=list;const sorted=sortResults(list);if(!sorted.length){showState('No matches found','Try a shorter item name or a different spelling.');return}results.innerHTML=sorted.map(renderCard).join('');count.textContent=sorted.length+' RESULT'+(sorted.length===1?'':'S')}
+function display(list){lastResults=list;const sorted=sortResults(list);if(!sorted.length){showState('No matches found','Try a shorter item name or a different spelling.');return}results.innerHTML=sorted.map(r=>{try{return renderCard(r)}catch(error){console.error('Farm Finder card render failed:',r,error);return '<article class="result"><strong>'+esc(r.title||'Search result')+'</strong><p>Some details could not be displayed. The search result was still found.</p></article>'}}).join('');count.textContent=sorted.length+' RESULT'+(sorted.length===1?'':'S')}
 async function search(q){
  const source=$('#source').value,limit=Number($('#limit').value); let all=[];button.disabled=true;button.textContent='SEARCHING…';status.textContent='QUERY IN PROGRESS';notice.classList.add('hidden');showState('Searching the Origin System…','Checking the locally hosted drop index.');
  try{
