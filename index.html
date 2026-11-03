@@ -251,7 +251,7 @@ async function search(q){
    matches=groupRelicVariants(matches);records.push(...matches);
   }
   if(source!=='drops'){const wikiMatch=all.find(r=>(r.title||'').toLowerCase()===(q||'').toLowerCase())||all.find(r=>(r.title||'').toLowerCase().includes(q.toLowerCase()));records.push({title:'Warframe Wiki - '+q.trim().replace(/\s+/g,' ').replace(/\b\w/g,c=>c.toUpperCase()),source:'Warframe Wiki',tag:'WIKI RESULT',image:wikiMatch?.image,wikiQuery:q,wikiPageTitle:null,url:null,score:1});}
-  display(records);hydrateMissingImages(records);status.textContent='SEARCH COMPLETE · '+records.length+' FOUND';
+  display(records);hydrateMissingImages(sortResults(groupDropSources(records)).slice(0,limit));status.textContent='SEARCH COMPLETE · '+records.length+' FOUND';
   notice.textContent=source==='drops'?'Drop data only · relic refinement levels are grouped when detected.':source==='wiki'?'Wiki only · no drop-table matches are included.':'Both sources · drop-table matches plus a direct Wiki search link.';notice.classList.remove('hidden');
  }catch(e){showState('Could not load the local search index','The deployment may still be rebuilding. Refresh this page and try again.');status.textContent='INDEX ERROR';notice.textContent='Local index error: '+(e?.message||'unknown error');notice.classList.remove('hidden')}
  finally{button.disabled=false;button.textContent='SEARCH ↗'}
