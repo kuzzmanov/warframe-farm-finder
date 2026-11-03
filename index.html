@@ -195,13 +195,23 @@ function sourceVariantMeta(r){
  const cleanRotation=String(rotation).replace(/^rotation\s*/i,'');
  return [p.mission,p.bounty,stage,cleanRotation?'Rot '+cleanRotation:'',p.source].filter(Boolean).join(' · ');
 }
+function sourceLocationGroups(sources){
+ const groups=new Map();for(const r of sources){const key=sourceGroupKey(r);if(!groups.has(key))groups.set(key,[]);groups.get(key).push(r)}return [...groups.values()];
+}
+function sourceRegion(group){
+ const best=[...group].sort((a,b)=>(b.chance??-1)-(a.chance??-1))[0],p=sourceParts(best);
+ if(p.enemy)return sourceLocationTitle(p);
+ if(p.planet)return p.planet;
+ const context=[p.bounty,p.location,p.main].filter(Boolean).join(' '),match=context.match(/Orb Vallis|Cetus|Plains of Eidolon|Cambion Drift|Zariman|Duviri|Void/i);
+ return match?match[0]:sourceLocationTitle(p);
+}
+function sourceRegionGroups(locationGroups){
+ const groups=new Map();for(const group of locationGroups){const region=sourceRegion(group);if(!groups.has(region))groups.set(region,[]);groups.get(region).push(group)}return [...groups.entries()];
+}
 function renderSourceDetailRows(sources){
  return sources.map(r=>'<div class="source-row"><div><div class="source-location">'+esc(sourceVariantMeta(r)||sourceLocationTitle(sourceParts(r)))+'</div></div>'+(chanceText(r)?'<div class="source-chance">'+esc(chanceText(r))+'</div>':'<div class="source-meta">Chance not listed</div>')+'</div>').join('');
 }
-function renderSourceRows(sources){
- const groups=new Map();
- for(const r of sources){const key=sourceGroupKey(r);if(!groups.has(key))groups.set(key,[]);groups.get(key).push(r)}
- return [...groups.values()].map(group=>{
+function renderLocationGroup(group){
   const ordered=[...group].sort((a,b)=>(b.chance??-1)-(a.chance??-1)),best=ordered[0],p=sourceParts(best),chance=chanceText(best),title=sourceLocationTitle(p);
   const stages=[...new Set(group.map(r=>detailValue(r,'stage')).filter(Boolean))],rotations=[...new Set(group.flatMap(r=>r._groupedRotations?[...r._groupedRotations]:[detailValue(r,'rotation')]).filter(Boolean).map(x=>String(x).replace(/^rotation\s*/i,'')))].sort();
   const summary=[p.mission,stages.length>1?stages.length+' stages':stages[0],rotations.length?'Rot '+rotations.join('/'):''].filter(Boolean).join(' · ');
@@ -209,6 +219,13 @@ function renderSourceRows(sources){
   const enemyPlaces=knownEnemyLocations(p),remaining=enemyPlaces.length>2?enemyPlaces.slice(2):[];
   const moreEnemyLocations=remaining.length?'<details class="source-variants"><summary>Show '+remaining.length+' more enemy locations</summary><div class="source-meta">'+esc(remaining.join(' · '))+'</div></details>':'';
   return '<div class="source-row"><div><div class="source-location">'+esc(title)+'</div>'+(summary?'<div class="source-meta">'+esc(summary)+'</div>':'')+moreEnemyLocations+more+'</div>'+(chance?'<div class="source-chance">'+esc(chance)+'</div>':'')+'</div>';
+}
+function renderSourceRows(sources){
+ const locations=sourceLocationGroups(sources),regions=sourceRegionGroups(locations);
+ return regions.map(([region,groups])=>{
+  if(groups.length===1)return renderLocationGroup(groups[0]);
+  const best=groups.flat().sort((a,b)=>(b.chance??-1)-(a.chance??-1))[0],chance=chanceText(best);
+  return '<div class="source-row"><div><div class="source-location">'+esc(region)+' · '+groups.length+' farm locations</div><details class="source-variants"><summary>View '+groups.length+' locations</summary><div class="source-rows">'+groups.map(renderLocationGroup).join('')+'</div></details></div>'+(chance?'<div class="source-chance">'+esc(chance)+' best</div>':'')+'</div>';
  }).join('');
 }
 function renderCard(r){
@@ -241,9 +258,9 @@ function renderCard(r){
    const location=[p.planet,p.node,p.mission].filter(Boolean).join(' · ')||p.main||'Location summary unavailable';
    content='<div class="card-focus"><div class="focus-primary"><div class="focus-eyebrow">Farm location</div><div class="focus-name" style="font-size:17px">'+esc(location)+'</div></div>'+(chance?'<span class="focus-chance">'+esc(chance)+'</span>':'')+'</div>';
   }
-  const locationGroups=new Map(ordered.map(r=>[sourceGroupKey(r),true]));
+  const locationGroups=sourceLocationGroups(ordered),regionGroups=sourceRegionGroups(locationGroups);
   if(ordered.length>1){
-   const label=kind==='resource'?'View '+locationGroups.size+' farm locations':'View '+locationGroups.size+' drop sources';
+   const label=kind==='resource'?'View '+locationGroups.length+' farm locations'+(regionGroups.length<locationGroups.length?' across '+regionGroups.length+' regions':''):'View '+locationGroups.length+' drop sources';
    content+='<details class="source-list"><summary>'+label+'</summary><div class="source-rows">'+renderSourceRows(ordered)+'</div></details>';
   }else if(kind==='resource'&&ordered.length===1){
    content+='<details class="source-list"><summary>View drop location details</summary><div class="source-rows">'+renderSourceRows(ordered)+'</div></details>';
@@ -381,3 +398,4 @@ $('#limit').addEventListener('change',()=>{if(queryInput.value.trim())search(que
 $('#sortOrder').addEventListener('change',()=>display(lastResults));
 </script>
 </body></html>
+
