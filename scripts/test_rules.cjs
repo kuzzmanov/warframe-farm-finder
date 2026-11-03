@@ -30,6 +30,15 @@ assert.ok(fallbackImage('resource').startsWith('data:image/svg+xml,'), 'missing 
 const card = renderCard({ title: 'Neurodes', category: 'RESOURCE' });
 assert.match(card, /class="itemthumb thumb-resource"/);
 assert.ok(card.indexOf('class="resultvisual"') < card.indexOf('class="result-heading"'), 'image precedes the title');
+for (const result of [
+  { title:'Redirection', category:'DROP DATA' },
+  { title:'Paris Prime Blueprint', relic:'Lith P1' },
+  { title:'Wiki test', source:'Warframe Wiki', tag:'WIKI RESULT', wikiQuery:'Wiki test' },
+]) {
+  const output=renderCard(result);
+  assert.ok(output.indexOf('class="resultvisual"') < output.indexOf('class="result-heading"'), `${result.title} keeps its image above its title`);
+}
+assert.match(renderCard({title:'Redirection',detailItems:[{label:'Enemy',value:'Scavenger Drone'},{label:'Planet',value:'Earth'},{label:'Node',value:'Coba'}]}),/Scavenger Drone \/ Earth – Coba/);
 assert.match(html, /\.resultlayout\{grid-template-columns:minmax\(0,1fr\)/);
 const enemyRows = renderSourceRows([{ title:'Redirection', chance:2, detailItems:[{label:'Enemy',value:'Crewman'},{label:'Planet',value:'Earth'},{label:'Node',value:'Coba'}] }]);
 assert.match(enemyRows, /Crewman \/ Earth – Coba/);
