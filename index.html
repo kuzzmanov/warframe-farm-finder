@@ -104,17 +104,6 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const wikiUrl=t=>'https://wiki.warframe.com/w/Special:Search?search='+encodeURIComponent(String(t||'').trim());
 const stageInfo=s=>({intact:['⚪','ref-intact','Intact'],exceptional:['🟢','ref-exceptional','Exceptional'],flawless:['🔵','ref-flawless','Flawless'],radiant:['🟡','ref-radiant','Radiant']}[String(s||'intact').toLowerCase()]||['🔹','ref-intact',s||'Unknown']);
 const chanceChip=r=>typeof r.chance==='number'?'<span class="detail-chip dropchance">🎯 <b>Drop chance</b> '+esc(+r.chance.toFixed(4))+'%</span>':'<span class="detail-chip">🎯 <b>Drop chance</b> Not listed</span>';
-function stageInfo(value){
- const name=String(value||'Intact').trim();
- const key=name.toLowerCase();
- const map={
-  intact:['INTACT','ref-intact','Intact'],
-  exceptional:['EXCEPTIONAL','ref-exceptional','Exceptional'],
-  flawless:['FLAWLESS','ref-flawless','Flawless'],
-  radiant:['RADIANT','ref-radiant','Radiant']
- };
- return map[key]||[name.toUpperCase(),'ref-intact',name||'Intact'];
-}
 function renderCard(r){
  const isWiki=r.source==='Warframe Wiki'||r.kind==='wiki';
  const isPrime=!!r.groupedRelic;
