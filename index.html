@@ -198,12 +198,12 @@ async function resolveWikiResult(r){
   }
   if(!page)return;
   r.wikiPageTitle=page.title;r.url=page.fullurl||('https://wiki.warframe.com/w/'+encodeURIComponent(page.title.replace(/ /g,'_')));
-  r.title='Warframe Wiki - '+page.title;
+  r.title=page.title;r.wikiExcerpt=page.extract||'';
   if(!r.image&&page.thumbnail?.source)r.image=page.thumbnail.source;
   const card=[...results.querySelectorAll('.result')].find(el=>el.dataset.wikiQuery===query);
   if(card){
    const titleLink=card.querySelector('.wiki-result-link');if(titleLink){titleLink.textContent=r.title;titleLink.href=r.url}
-   const sourceLink=card.querySelector('.result-source-link');if(sourceLink)sourceLink.href=r.url;
+   const excerpt=card.querySelector('.wiki-excerpt');if(excerpt&&r.wikiExcerpt)excerpt.textContent=r.wikiExcerpt;
    card.dataset.resultTitle=r.title;
    const image=card.querySelector('.itemthumb');if(image&&r.image){image.style.display='';image.src=r.image}
   }
