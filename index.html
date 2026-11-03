@@ -287,11 +287,11 @@ async function lookupEnemyLocations(enemy){
    const html=data?.parse?.text?.['*'];if(!html)return null;
    const doc=new DOMParser().parseFromString(html,'text/html');
    const fields={planets:[],tileSets:[]};
-   for(const row of doc.querySelectorAll('.infobox.type-enemyBox .row')){
+   for(const row of doc.querySelectorAll('.infobox .row')){
     const label=String(row.querySelector('.label')?.textContent||'').trim().toLowerCase();
     const values=[...row.querySelectorAll('.value a')].map(a=>a.textContent.trim()).filter(Boolean);
     if(label.includes('planet'))fields.planets.push(...values);
-    if(label.includes('tile set'))fields.tileSets.push(...values);
+    if(label.includes('tile set')||label.includes('location')||label.includes('habitat'))fields.tileSets.push(...values);
    }
    fields.planets=[...new Set(fields.planets)];fields.tileSets=[...new Set(fields.tileSets)];
    if(!fields.planets.length&&!fields.tileSets.length)return null;
