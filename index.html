@@ -14,8 +14,8 @@
 
 /* Four purpose-built result card layouts */
 .result{padding:16px 17px}
-.resultlayout{grid-template-columns:92px minmax(0,1fr);align-items:stretch}
-.resultvisual{align-self:stretch;display:flex;align-items:center;justify-content:center}
+.resultlayout{grid-template-columns:92px minmax(0,1fr);align-items:start}
+.resultvisual{align-self:start;display:flex;align-items:center;justify-content:center}
 .resultmain{align-self:stretch;justify-content:center}
 .itemthumb{width:84px;height:84px}
 .result--regular{border-color:#477d68;background:linear-gradient(110deg,#12271f,#111722 48%,#ffffff03)}
@@ -94,24 +94,34 @@ const RESOURCE_NAMES=new Set([
  'orokin cell','oxium','plastos','plastids','polymer bundle','pustrels','rubedo','salvage','somatic fibers',
  'tellurium','thermal sludge','titanium','traces','voidgel orb','agrius','ganglion','entrati lanthorn'
 ]);
+const normalizeItemName=value=>String(value||'').replace(/^\s*(?:\d+\s*[x×]\s*|\(\s*\d+\s*[x×]\s*\))/i,'').trim().toLowerCase().replace(/\s+/g,' ');
 function cardKind(r){
  if(r.source==='Warframe Wiki'||r.tag==='WIKI SEARCH')return 'wiki';
  if(r.groupedRelic||r.relic)return 'prime';
- return RESOURCE_NAMES.has(String(r.title||'').trim().toLowerCase())?'resource':'regular';
+ return RESOURCE_NAMES.has(normalizeItemName(r.title))||String(r.category||'').toUpperCase()==='RESOURCE'?'resource':'regular';
 }
 function groupDropSources(list){
  const groups=new Map(),out=[];
  for(const r of list){
   if(r.groupedRelic||cardKind(r)==='wiki'){out.push(r);continue}
-  const key=String(r.title||'').trim().toLowerCase();
+  const key=normalizeItemName(r.title);
   if(!key){out.push(r);continue}
   if(!groups.has(key)){const g={...r,groupedSources:[]};groups.set(key,g);out.push(g)}
-  const g=groups.get(key);g.groupedSources.push(r);
+  const g=groups.get(key),sourceKey=sourceParts(r);
+  const signature=[sourceKey.planet,sourceKey.node,sourceKey.main,sourceKey.mission,...sourceKey.extras,r.chance].join('|').toLowerCase();
+  g._sourceSignatures=g._sourceSignatures||new Set();
+  if(g._sourceSignatures.has(signature))continue;
+  g._sourceSignatures.add(signature);g.groupedSources.push(r);
   if((r.chance??-1)>(g.chance??-1))g.chance=r.chance;
   if(!g.image&&r.image)g.image=r.image;
   g.score=Math.max(g.score||0,r.score||0);
  }
  return out;
+}
+function fallbackImage(kind){
+ const colors={resource:'#c7b2f1',prime:'#f0d18b',regular:'#9ae4bf',wiki:'#a9c8ff'},color=colors[kind]||'#a9c8ff';
+ const svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 84 84"><rect width="84" height="84" rx="12" fill="#151d2a"/><path d="M42 13 48 34 69 42 48 50 42 71 36 50 15 42 36 34Z" fill="none" stroke="'+color+'" stroke-width="3"/><circle cx="42" cy="42" r="5" fill="'+color+'"/></svg>';
+ return 'data:image/svg+xml,'+encodeURIComponent(svg);
 }
 function detailValue(r,...labels){
  const items=Array.isArray(r.detailItems)?r.detailItems:[];
@@ -152,7 +162,7 @@ function renderSourceRows(sources){
 function renderCard(r){
  const kind=cardKind(r),sources=Array.isArray(r.groupedSources)?r.groupedSources:[r];
  const image=r.image||sources.find(x=>x.image)?.image||'';
- const thumb=image?'<img class="itemthumb thumb-'+kind+'" src="'+esc(image)+'" alt="" loading="lazy" onerror="this.style.display=\'none\'">':'<div class="itemthumb thumb-'+kind+'" aria-hidden="true">✧</div>';
+ const safeImage=image||fallbackImage(kind),thumb='<img class="itemthumb thumb-'+kind+'" src="'+esc(safeImage)+'" alt="" loading="lazy" onerror="this.onerror=null;this.src=\''+esc(fallbackImage(kind))+'\'">';
  const title=esc(r.title||'Untitled result');
  let content='';
  if(kind==='prime'){
@@ -222,11 +232,12 @@ async function hydrateMissingImages(list){
   if(r.source==='Warframe Wiki'){await resolveWikiResult(r);continue}
   if(r.image||!r.title)continue;
   try{
-   let page=await lookupWikiPage(r.title);
+   const itemName=String(r.title).replace(/^\s*(?:\d+\s*[x×]\s*|\(\s*\d+\s*[x×]\s*\))/i,'').trim();
+   let page=await lookupWikiPage(itemName);
    if(!page){
-    const params=new URLSearchParams({action:'query',format:'json',origin:'*',generator:'search',gsrsearch:r.title,gsrlimit:'1',prop:'pageimages|info|extracts',inprop:'url',piprop:'thumbnail',pithumbsize:'160',exintro:'1',explaintext:'1',exchars:'220'});
+   const params=new URLSearchParams({action:'query',format:'json',origin:'*',generator:'search',gsrsearch:itemName+' component',gsrlimit:'3',prop:'pageimages|info|extracts',inprop:'url',piprop:'thumbnail',pithumbsize:'160',exintro:'1',explaintext:'1',exchars:'220'});
     const data=await fetch('https://wiki.warframe.com/api.php?'+params.toString()).then(x=>x.ok?x.json():null);
-    page=Object.values(data?.query?.pages||{}).find(p=>p.thumbnail?.source)||null;
+    page=Object.values(data?.query?.pages||{}).find(p=>p.thumbnail?.source&&String(p.title||'').toLowerCase().includes(itemName.toLowerCase())&&!/^warframe$/i.test(p.title||''))||null;
    }
    if(page?.thumbnail?.source){r.image=page.thumbnail.source;const card=[...results.querySelectorAll('.result')].find(el=>el.dataset.resultTitle===r.title);const image=card?.querySelector('.itemthumb');if(image){image.style.display='';image.src=r.image}}
   }catch(e){/* Optional live Wiki lookup; preserve the result if unavailable. */}

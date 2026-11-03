@@ -25,8 +25,12 @@ jobs:
         uses: actions/checkout@v4
       - name: Check browser JavaScript syntax
         run: python3 scripts/check_inline_js.py | node --check
+      - name: Check classification, grouping, and image fallback rules
+        run: node scripts/test_rules.cjs
       - name: Build local search index
         run: python3 scripts/build_index.py
+      - name: Validate generated search data
+        run: node scripts/validate_index.cjs
       - name: Configure Pages
         uses: actions/configure-pages@v5
       - name: Upload site

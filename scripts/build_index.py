@@ -7,6 +7,7 @@ DROP_URL = "https://raw.githubusercontent.com/WFCD/warframe-drop-data/main/data/
 MARKET_URL = "https://api.warframe.market/v2/items"
 WIKI_API = "https://wiki.warframe.com/api.php"
 ASSET_BASE = "https://warframe.market/static/assets/"
+quantity_prefix = re.compile(r"^\s*(?:\d+\s*[x×]\s*|\(\s*\d+\s*[x×]\s*\))", re.I)
 os.makedirs("data", exist_ok=True)
 
 def fetch_json(url, timeout=120):
@@ -25,7 +26,8 @@ try:
             if isinstance(en, dict) and en.get("name"):
                 path = en.get("subIcon") or en.get("thumb") or en.get("icon")
                 if path:
-                    image_by_name[" ".join(en["name"].casefold().split())] = path if str(path).startswith("http") else ASSET_BASE + str(path).lstrip("/")
+                    market_name = quantity_prefix.sub("", en["name"]).strip()
+                    image_by_name[" ".join(market_name.casefold().split())] = path if str(path).startswith("http") else ASSET_BASE + str(path).lstrip("/")
             for value in obj.values():
                 if isinstance(value, (dict, list)):
                     find_market_items(value)
@@ -48,6 +50,19 @@ context_labels = {
     "tier":"Tier", "relicName":"Relic"
 }
 relic_pattern = re.compile(r"\b(Lith|Meso|Neo|Axi|Requiem)\s+([A-Z0-9]+)(?:\s+(Intact|Exceptional|Flawless|Radiant))?\b", re.I)
+
+RESOURCE_NAMES = {"alloy plate", "argon crystal", "carbides", "circuits", "control module", "cryotic", "cubic diodes", "detonite ampule", "ferrite", "fieldron sample", "gallium", "hexenon", "isoplasts", "morphics", "nano spores", "neural sensors", "neurodes", "orokin cell", "oxium", "plastos", "plastids", "polymer bundle", "pustrels", "rubedo", "salvage", "somatic fibers", "tellurium", "thermal sludge", "titanium", "traces", "voidgel orb", "agrius", "ganglion", "entrati lanthorn"}
+
+def normalized_name(value):
+    return " ".join(quantity_prefix.sub("", clean(value)).casefold().split())
+
+def classify(title, section=""):
+    name = normalized_name(title)
+    if name in RESOURCE_NAMES:
+        return "RESOURCE"
+    if section == "relics":
+        return "RELIC"
+    return "DROP DATA"
 
 def clean(value):
     if value is None: return ""
@@ -87,10 +102,10 @@ def add(title, details, chance=None, rarity=None, category="DROP DATA"):
     key = (title.casefold(), tuple(x.casefold() for x in compact), chance_num, clean(rarity).casefold())
     if key in seen: return
     seen.add(key)
-    image = image_by_name.get(" ".join(title.casefold().split()))
+    image = image_by_name.get(normalized_name(title))
     records.append({
         "title":title, "details":compact, "detailItems":[{"label":label,"value":clean(value)} for label,value in details if clean(value)], "chance":chance_num, "rarity":clean(rarity),
-        "category":category, "relic":relic_name, "refinement":refinement, "image":image,
+        "category":"RESOURCE" if classify(title, category) == "RESOURCE" else category, "relic":relic_name, "refinement":refinement, "image":image,
         "detail":" · ".join(compact + ([f"Chance {chance_num:g}%"] if chance_num is not None else []) + ([clean(rarity)] if rarity else []))
     })
 
@@ -138,7 +153,7 @@ walk(data)
 # Query in batches at build time so the browser never needs cross-origin requests.
 def fill_wiki_thumbnails():
     missing = [r for r in records if not r.get("image")]
-    titles = list(dict.fromkeys(r["title"] for r in missing if r.get("title")))
+    titles = list(dict.fromkeys(quantity_prefix.sub("", r["title"]).strip() for r in missing if r.get("title")))
     found = {}
     for start in range(0, len(titles), 40):
         batch = titles[start:start+40]
@@ -157,9 +172,22 @@ def fill_wiki_thumbnails():
         except Exception as exc:
             print(f"Wiki thumbnail batch skipped: {exc}")
     for r in missing:
-        key = " ".join(r["title"].casefold().split())
+        key = normalized_name(r["title"])
         if key in found:
             r["image"] = found[key]
+            continue
+        # Prefer the nearest item/component thumbnail, then its Prime counterpart.
+        # Avoid matching a Warframe page for a component that shares its name.
+        words = set(key.split())
+        candidates = [(name, url) for name, url in image_by_name.items()
+                      if words and (words.issubset(set(name.split())) or set(name.split()).issubset(words))]
+        if candidates:
+            candidates.sort(key=lambda pair: ("prime" in pair[0], abs(len(pair[0].split())-len(words)), pair[0]))
+            r["image"] = candidates[0][1]
+        else:
+            prime_key = key + " prime"
+            if prime_key in image_by_name:
+                r["image"] = image_by_name[prime_key]
     print(f"Filled {sum(1 for r in records if r.get('image'))} total record thumbnails using Market + Wiki")
 
 try:
