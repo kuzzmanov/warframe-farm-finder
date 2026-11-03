@@ -14,9 +14,11 @@
 
 /* Four purpose-built result card layouts */
 .result{padding:16px 17px}
-.resultlayout{grid-template-columns:minmax(0,1fr);gap:7px;align-items:start}
+.resultlayout{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+.resulthead{width:max-content;max-width:100%}
 .resultvisual{width:100%;align-self:start;display:flex;align-items:center;justify-content:center}
-.resultmain{align-self:stretch;justify-content:center}
+.resultmain{width:100%;align-self:stretch;justify-content:center}
+.resulthead .result-heading{text-align:center}
 .itemthumb{width:84px;height:84px}
 .result--regular{border-color:#477d68;background:linear-gradient(110deg,#12271f,#111722 48%,#ffffff03)}
 .result--prime{border-color:#92753e;background:linear-gradient(110deg,#2a2316,#151923 48%,#ffffff03)}
@@ -49,7 +51,7 @@
 .tier-lith{color:#8bd8a6}.tier-meso{color:#83baff}.tier-neo{color:#c5a0ff}.tier-axi{color:#f0c777}.tier-requiem{color:#ed9292}
 .refinement-list,.source-list{margin-top:10px;border-top:1px solid #293449;padding-top:8px}
 .refinement-list summary,.source-list summary{cursor:pointer;color:#c4d1e3;font-size:12px;font-weight:750}
-.source-rows{display:grid;gap:7px;margin-top:9px}
+.source-rows{display:grid;gap:7px;margin-top:9px}.source-variants{margin-top:5px}.source-variants summary{cursor:pointer;color:#9ba9bf;font-size:11px}
 .source-row{border:1px solid #293449;border-radius:8px;background:#0e141e;padding:9px 10px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 .source-location{font-size:13px;color:#e2ebf7;font-weight:750}
 .source-meta{font-size:11px;color:#9ba9bf;margin-top:2px}
@@ -148,24 +150,55 @@ function sourceParts(r){
  const location=detailValue(r,'location');
  const bounty=detailValue(r,'bounty');
  const source=sourceValues.find(x=>x!==planet&&x!==node)||detailValue(r,'source');
+ const enemyLocations=r.enemyLocations&&typeof r.enemyLocations==='object'?r.enemyLocations:{};
  // Bounty records carry the human-readable farm activity in Bounty; the Source value is only an internal table key.
  const main=enemy||location||node||bounty||source||'Drop location';
  const place=[planet,node].filter(Boolean).join(' · ');
  const extras=[mission,detailValue(r,'stage'),detailValue(r,'rotation'),...(bounty&&main===bounty?[]:[bounty])].filter(Boolean);
- return {planet,node,enemy,location,mission,source,main,place,extras};
+ return {planet,node,enemy,location,mission,source,bounty,main,place,extras,enemyLocations};
 }
 function chanceText(r){
  return typeof r.chance==='number'&&Number.isFinite(r.chance)?r.chance.toFixed(4).replace(/0+$/,'').replace(/\.$/,'')+'%':'';
 }
+function knownEnemyLocations(p){
+ const planets=Array.isArray(p.enemyLocations.planets)?p.enemyLocations.planets.filter(Boolean):[];
+ const tiles=Array.isArray(p.enemyLocations.tileSets)?p.enemyLocations.tileSets.filter(Boolean):[];
+ return [...new Set([...planets,...tiles])];
+}
+function sourceLocationTitle(p){
+ if(p.enemy){
+  const known=knownEnemyLocations(p);
+  const direct=[p.planet,p.node].filter(Boolean).join(' – ');
+  return p.enemy+' / '+(direct||known.join(', ')||p.location||p.place||'Location not listed');
+ }
+ return [p.planet,p.main].filter(Boolean).join(' · ')||'Location not specified';
+}
+function sourceGroupKey(r){
+ const p=sourceParts(r);
+ if(p.enemy)return [p.enemy,p.planet,p.node,p.location,p.mission].join('|').toLowerCase();
+ if(p.node)return [p.planet,p.node,p.mission].join('|').toLowerCase();
+ if(p.planet)return [p.planet,p.mission].join('|').toLowerCase();
+ if(p.location)return [p.location,p.mission].join('|').toLowerCase();
+ const activity=(p.bounty||p.main).replace(/level\s+\d+\s*[-–]\s*\d+/ig,'Bounty').trim();
+ return [activity,p.mission].join('|').toLowerCase();
+}
+function sourceVariantMeta(r){
+ const p=sourceParts(r),stage=detailValue(r,'stage'),rotation=detailValue(r,'rotation')||r._groupedRotations&&[...r._groupedRotations].join('/')||'';
+ const cleanRotation=String(rotation).replace(/^rotation\s*/i,'');
+ return [p.mission,p.bounty,stage,cleanRotation?'Rot '+cleanRotation:'',p.source].filter(Boolean).join(' · ');
+}
+function renderSourceDetailRows(sources){
+ return sources.map(r=>'<div class="source-row"><div><div class="source-location">'+esc(sourceVariantMeta(r)||sourceLocationTitle(sourceParts(r)))+'</div></div>'+(chanceText(r)?'<div class="source-chance">'+esc(chanceText(r))+'</div>':'<div class="source-meta">Chance not listed</div>')+'</div>').join('');
+}
 function renderSourceRows(sources){
- return sources.map(r=>{
-  const p=sourceParts(r),chance=chanceText(r);
-  const title=[p.planet,p.main].filter(Boolean).join(' · ');
-  const rotations=r._groupedRotations?.size?'Rot '+[...r._groupedRotations].sort().join('/') :'';
-  const meta=[p.mission,...p.extras.filter(x=>x!==p.mission&&x!==detailValue(r,'rotation')&&!/^rotation\s/i.test(x)),rotations].filter(Boolean).join(' · ');
-  const enemyLocation=[p.planet,p.node].filter(Boolean).join(' – ')||p.location||p.place||'';
-  const sourceTitle=p.enemy?p.enemy+' / '+(enemyLocation||'Location not listed'):title||'Location not specified';
-  return '<div class="source-row"><div><div class="source-location">'+esc(sourceTitle)+'</div>'+(meta?'<div class="source-meta">'+esc(meta)+'</div>':'')+'</div>'+(chance?'<div class="source-chance">'+esc(chance)+'</div>':'')+'</div>';
+ const groups=new Map();
+ for(const r of sources){const key=sourceGroupKey(r);if(!groups.has(key))groups.set(key,[]);groups.get(key).push(r)}
+ return [...groups.values()].map(group=>{
+  const ordered=[...group].sort((a,b)=>(b.chance??-1)-(a.chance??-1)),best=ordered[0],p=sourceParts(best),chance=chanceText(best),title=sourceLocationTitle(p);
+  const stages=[...new Set(group.map(r=>detailValue(r,'stage')).filter(Boolean))],rotations=[...new Set(group.flatMap(r=>r._groupedRotations?[...r._groupedRotations]:[detailValue(r,'rotation')]).filter(Boolean).map(x=>String(x).replace(/^rotation\s*/i,'')))].sort();
+  const summary=[p.mission,stages.length>1?stages.length+' stages':stages[0],rotations.length?'Rot '+rotations.join('/'):''].filter(Boolean).join(' · ');
+  const more=group.length>1?'<details class="source-variants"><summary>Show '+group.length+' drop entries</summary><div class="source-rows">'+renderSourceDetailRows(ordered)+'</div></details>':'';
+  return '<div class="source-row"><div><div class="source-location">'+esc(title)+'</div>'+(summary?'<div class="source-meta">'+esc(summary)+'</div>':'')+more+'</div>'+(chance?'<div class="source-chance">'+esc(chance)+'</div>':'')+'</div>';
  }).join('');
 }
 function renderCard(r){
@@ -191,15 +224,16 @@ function renderCard(r){
   const primary=ordered[0]||r,p=sourceParts(primary),chance=chanceText(primary);
   if(kind==='regular'){
    const place=p.enemy?'Enemy drop':p.planet||p.place||p.location||'Location not listed';
-   const main=p.enemy?p.enemy+' / '+([p.planet,p.node].filter(Boolean).join(' – ')||p.location||p.place||'Location not listed'):p.main||'Drop source not listed';
+   const known=knownEnemyLocations(p),main=p.enemy?p.enemy+' / '+([p.planet,p.node].filter(Boolean).join(' – ')||known.join(', ')||p.location||p.place||'Location not listed'):p.main||'Drop source not listed';
    const mission=p.mission;
    content='<div class="card-focus"><div class="focus-primary"><div class="focus-eyebrow">'+esc(place)+'</div><div class="focus-name">'+esc(main)+'</div>'+(mission?'<div class="focus-secondary"><span class="refinement ref-flawless">'+esc(mission)+'</span></div>':'')+'</div>'+(chance?'<span class="focus-chance">'+esc(chance)+' drop chance</span>':'')+'</div>';
   }else{
    const location=[p.planet,p.node,p.mission].filter(Boolean).join(' · ')||p.main||'Location summary unavailable';
    content='<div class="card-focus"><div class="focus-primary"><div class="focus-eyebrow">Farm location</div><div class="focus-name" style="font-size:17px">'+esc(location)+'</div></div>'+(chance?'<span class="focus-chance">'+esc(chance)+'</span>':'')+'</div>';
   }
+  const locationGroups=new Map(ordered.map(r=>[sourceGroupKey(r),true]));
   if(ordered.length>1){
-   const label=kind==='resource'?'Show all '+ordered.length+' farm locations':'Show '+(ordered.length-1)+' additional drop sources';
+   const label=kind==='resource'?'View '+locationGroups.size+' farm locations':'View '+locationGroups.size+' drop sources';
    content+='<details class="source-list"><summary>'+label+'</summary><div class="source-rows">'+renderSourceRows(ordered)+'</div></details>';
   }else if(kind==='resource'&&ordered.length===1){
    content+='<details class="source-list"><summary>View drop location details</summary><div class="source-rows">'+renderSourceRows(ordered)+'</div></details>';
@@ -207,7 +241,7 @@ function renderCard(r){
  }
  const kindLabel={prime:'PRIME PART',regular:'REGULAR DROP',resource:'RESOURCE',wiki:'WARFRAME WIKI'}[kind];
  const heading=kind==='wiki'?'<h3 class="result-heading"><a class="wiki-result-link" href="'+esc(r.url||wikiUrl(r.wikiQuery||r.title))+'" target="_blank" rel="noopener noreferrer">'+title+'</a></h3>':'<h3 class="result-heading">'+title+'</h3>';
- return '<article class="result result--'+kind+'" data-result-title="'+esc(r.title||'')+'" data-wiki-query="'+esc(r.wikiQuery||'')+'"><div class="resultlayout"><div class="resultvisual">'+thumb+'</div><div class="resultmain">'+heading+'<div class="result-kind">'+kindLabel+'</div>'+content+'</div></div></article>';
+ return '<article class="result result--'+kind+'" data-result-title="'+esc(r.title||'')+'" data-wiki-query="'+esc(r.wikiQuery||'')+'"><div class="resultlayout"><div class="resulthead"><div class="resultvisual">'+thumb+'</div>'+heading+'</div><div class="resultmain"><div class="result-kind">'+kindLabel+'</div>'+content+'</div></div></article>';
 }
 async function lookupWikiPage(title){
  const params=new URLSearchParams({action:'query',format:'json',origin:'*',prop:'pageimages|info|extracts',inprop:'url',piprop:'thumbnail',pithumbsize:'160',exintro:'1',explaintext:'1',exchars:'220',redirects:'1',titles:title});

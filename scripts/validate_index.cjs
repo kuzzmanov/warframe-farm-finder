@@ -9,5 +9,9 @@ for (const [i, r] of index.records.entries()) {
   assert.ok(r.detailItems.every(d => typeof d.label === 'string' && typeof d.value === 'string'), `record ${i} detailItems are normalized`);
   assert.ok(r.image == null || typeof r.image === 'string', `record ${i} image has a valid shape`);
   assert.ok(r.category == null || typeof r.category === 'string', `record ${i} category has a valid shape`);
+  assert.ok(r.enemyLocations == null || (
+    Array.isArray(r.enemyLocations.planets) && Array.isArray(r.enemyLocations.tileSets) &&
+    [...r.enemyLocations.planets, ...r.enemyLocations.tileSets].every(x => typeof x === 'string')
+  ), `record ${i} enemy locations have a valid structured shape`);
 }
 console.log(`Validated ${index.records.length} normalized drop records.`);
