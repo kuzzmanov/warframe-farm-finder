@@ -149,50 +149,6 @@ def walk(obj, path=None, section=None):
 
 walk(data)
 
-# Resolve enemy drop sources from the Wiki's structured enemy infobox data.
-# This uses only declared planet/tile-set fields; unresolved enemies stay unlocated.
-def populate_enemy_locations():
-    params = urllib.parse.urlencode({
-        "action":"scribunto-console", "format":"json", "title":"Module:Enemies",
-        "content":"return require('Module:JSON').stringify(require('Module:Enemies/data'))",
-        "question":"=p", "clear":"1"
-    })
-    payload = fetch_json(WIKI_API + "?" + params, timeout=45)
-    enemy_data = payload.get("return")
-    if isinstance(enemy_data, str):
-        enemy_data = json.loads(enemy_data)
-    if not isinstance(enemy_data, dict):
-        raise ValueError("Wiki enemy data did not return a structured object")
-    locations = {}
-    for key, entry in enemy_data.items():
-        general = entry.get("General", {}) if isinstance(entry, dict) else {}
-        if not isinstance(general, dict): continue
-        def as_list(value):
-            if isinstance(value, str): return [value]
-            if isinstance(value, list): return value
-            if isinstance(value, dict): return [value[k] for k in sorted(value, key=str)]
-            return []
-        data = {
-            "planets": list(dict.fromkeys(clean(x) for x in as_list(general.get("Planets")) if clean(x))),
-            "tileSets": list(dict.fromkeys(clean(x) for x in as_list(general.get("TileSets")) if clean(x)))
-        }
-        if not data["planets"] and not data["tileSets"]: continue
-        for name in (key, general.get("Name")):
-            if name: locations[normalized_name(name)] = data
-    attached = 0
-    for record in records:
-        enemy = next((item["value"] for item in record["detailItems"] if item["label"].casefold() == "enemy"), None)
-        data = locations.get(normalized_name(enemy or ""))
-        if data:
-            record["enemyLocations"] = data
-            attached += 1
-    print(f"Resolved structured enemy locations for {attached} drop records")
-
-try:
-    populate_enemy_locations()
-except Exception as exc:
-    print(f"Optional Wiki enemy locations unavailable: {exc}")
-
 # Fill thumbnail gaps (especially non-Prime parts) with page thumbnails from the official community Wiki.
 # Query in batches at build time so the browser never needs cross-origin requests.
 def fill_wiki_thumbnails():

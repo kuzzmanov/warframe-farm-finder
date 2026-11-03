@@ -86,6 +86,7 @@
 </main>
 <script>
 const $=s=>document.querySelector(s),form=$('#searchForm'),queryInput=$('#query'),results=$('#results'),status=$('#connectionStatus'),count=$('#resultCount'),button=$('#searchButton'),notice=$('#notice');
+const enemyLocationCache=new Map(),enemyLocationRequests=new Map();
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const wikiUrl=t=>'https://wiki.warframe.com/w/Special:Search?search='+encodeURIComponent(String(t||'').trim());
 const stageInfo=s=>({intact:['⚪','ref-intact','Intact'],exceptional:['🟢','ref-exceptional','Exceptional'],flawless:['🔵','ref-flawless','Flawless'],radiant:['🟡','ref-radiant','Radiant']}[String(s||'intact').toLowerCase()]||['🔹','ref-intact',s||'Unknown']);
@@ -150,7 +151,8 @@ function sourceParts(r){
  const location=detailValue(r,'location');
  const bounty=detailValue(r,'bounty');
  const source=sourceValues.find(x=>x!==planet&&x!==node)||detailValue(r,'source');
- const enemyLocations=r.enemyLocations&&typeof r.enemyLocations==='object'?r.enemyLocations:{};
+ const enemyKey=String(enemy||'').trim().toLowerCase().replace(/\s+/g,' ');
+ const enemyLocations=r.enemyLocations&&typeof r.enemyLocations==='object'?r.enemyLocations:enemyLocationCache.get(enemyKey)||{};
  // Bounty records carry the human-readable farm activity in Bounty; the Source value is only an internal table key.
  const main=enemy||location||node||bounty||source||'Drop location';
  const place=[planet,node].filter(Boolean).join(' · ');
@@ -165,11 +167,17 @@ function knownEnemyLocations(p){
  const tiles=Array.isArray(p.enemyLocations.tileSets)?p.enemyLocations.tileSets.filter(Boolean):[];
  return [...new Set([...planets,...tiles])];
 }
+function renderEnemyLocationsDisclosure(p){
+ const locations=knownEnemyLocations(p);
+ if(locations.length<=2)return '';
+ return '<details class="source-list"><summary>View all '+locations.length+' enemy locations</summary><div class="source-rows">'+locations.map(location=>'<div class="source-row"><span class="source-location">'+esc(location)+'</span></div>').join('')+'</div></details>';
+}
 function sourceLocationTitle(p){
  if(p.enemy){
   const known=knownEnemyLocations(p);
   const direct=[p.planet,p.node].filter(Boolean).join(' – ');
-  return p.enemy+' / '+(direct||known.join(', ')||p.location||p.place||'Location not listed');
+  const compact=known.length>2?known.slice(0,2).join(', ')+' +'+(known.length-2)+' more':known.join(', ');
+  return p.enemy+' / '+(direct||compact||p.location||p.place||'Location not listed');
  }
  return [p.planet,p.main].filter(Boolean).join(' · ')||'Location not specified';
 }
@@ -198,7 +206,9 @@ function renderSourceRows(sources){
   const stages=[...new Set(group.map(r=>detailValue(r,'stage')).filter(Boolean))],rotations=[...new Set(group.flatMap(r=>r._groupedRotations?[...r._groupedRotations]:[detailValue(r,'rotation')]).filter(Boolean).map(x=>String(x).replace(/^rotation\s*/i,'')))].sort();
   const summary=[p.mission,stages.length>1?stages.length+' stages':stages[0],rotations.length?'Rot '+rotations.join('/'):''].filter(Boolean).join(' · ');
   const more=group.length>1?'<details class="source-variants"><summary>Show '+group.length+' drop entries</summary><div class="source-rows">'+renderSourceDetailRows(ordered)+'</div></details>':'';
-  return '<div class="source-row"><div><div class="source-location">'+esc(title)+'</div>'+(summary?'<div class="source-meta">'+esc(summary)+'</div>':'')+more+'</div>'+(chance?'<div class="source-chance">'+esc(chance)+'</div>':'')+'</div>';
+  const enemyPlaces=knownEnemyLocations(p),remaining=enemyPlaces.length>2?enemyPlaces.slice(2):[];
+  const moreEnemyLocations=remaining.length?'<details class="source-variants"><summary>Show '+remaining.length+' more enemy locations</summary><div class="source-meta">'+esc(remaining.join(' · '))+'</div></details>':'';
+  return '<div class="source-row"><div><div class="source-location">'+esc(title)+'</div>'+(summary?'<div class="source-meta">'+esc(summary)+'</div>':'')+moreEnemyLocations+more+'</div>'+(chance?'<div class="source-chance">'+esc(chance)+'</div>':'')+'</div>';
  }).join('');
 }
 function renderCard(r){
@@ -224,9 +234,9 @@ function renderCard(r){
   const primary=ordered[0]||r,p=sourceParts(primary),chance=chanceText(primary);
   if(kind==='regular'){
    const place=p.enemy?'Enemy drop':p.planet||p.place||p.location||'Location not listed';
-   const known=knownEnemyLocations(p),main=p.enemy?p.enemy+' / '+([p.planet,p.node].filter(Boolean).join(' – ')||known.join(', ')||p.location||p.place||'Location not listed'):p.main||'Drop source not listed';
+   const main=p.enemy?sourceLocationTitle(p):p.main||'Drop source not listed';
    const mission=p.mission;
-   content='<div class="card-focus"><div class="focus-primary"><div class="focus-eyebrow">'+esc(place)+'</div><div class="focus-name">'+esc(main)+'</div>'+(mission?'<div class="focus-secondary"><span class="refinement ref-flawless">'+esc(mission)+'</span></div>':'')+'</div>'+(chance?'<span class="focus-chance">'+esc(chance)+' drop chance</span>':'')+'</div>';
+   content='<div class="card-focus"><div class="focus-primary"><div class="focus-eyebrow">'+esc(place)+'</div><div class="focus-name">'+esc(main)+'</div>'+(mission?'<div class="focus-secondary"><span class="refinement ref-flawless">'+esc(mission)+'</span></div>':'')+'</div>'+(chance?'<span class="focus-chance">'+esc(chance)+' drop chance</span>':'')+'</div>'+(ordered.length===1&&p.enemy?renderEnemyLocationsDisclosure(p):'');
   }else{
    const location=[p.planet,p.node,p.mission].filter(Boolean).join(' · ')||p.main||'Location summary unavailable';
    content='<div class="card-focus"><div class="focus-primary"><div class="focus-eyebrow">Farm location</div><div class="focus-name" style="font-size:17px">'+esc(location)+'</div></div>'+(chance?'<span class="focus-chance">'+esc(chance)+'</span>':'')+'</div>';
@@ -247,6 +257,52 @@ async function lookupWikiPage(title){
  const params=new URLSearchParams({action:'query',format:'json',origin:'*',prop:'pageimages|info|extracts',inprop:'url',piprop:'thumbnail',pithumbsize:'160',exintro:'1',explaintext:'1',exchars:'220',redirects:'1',titles:title});
  const data=await fetch('https://wiki.warframe.com/api.php?'+params.toString()).then(x=>x.ok?x.json():null);
  return Object.values(data?.query?.pages||{}).find(p=>!p.missing)||null;
+}
+async function lookupEnemyLocations(enemy){
+ const key=String(enemy||'').trim().toLowerCase().replace(/\s+/g,' ');
+ if(!key)return null;
+ if(enemyLocationCache.has(key))return enemyLocationCache.get(key);
+ if(enemyLocationRequests.has(key))return enemyLocationRequests.get(key);
+ const request=(async()=>{
+  try{
+   const params=new URLSearchParams({action:'parse',format:'json',origin:'*',prop:'text',page:enemy});
+   const data=await fetch('https://wiki.warframe.com/api.php?'+params.toString()).then(x=>x.ok?x.json():null);
+   const html=data?.parse?.text?.['*'];if(!html)return null;
+   const doc=new DOMParser().parseFromString(html,'text/html');
+   const fields={planets:[],tileSets:[]};
+   for(const row of doc.querySelectorAll('.infobox.type-enemyBox .row')){
+    const label=String(row.querySelector('.label')?.textContent||'').trim().toLowerCase();
+    const values=[...row.querySelectorAll('.value a')].map(a=>a.textContent.trim()).filter(Boolean);
+    if(label.includes('planet'))fields.planets.push(...values);
+    if(label.includes('tile set'))fields.tileSets.push(...values);
+   }
+   fields.planets=[...new Set(fields.planets)];fields.tileSets=[...new Set(fields.tileSets)];
+   if(!fields.planets.length&&!fields.tileSets.length)return null;
+   enemyLocationCache.set(key,fields);return fields;
+  }catch(e){return null}
+ })();
+ enemyLocationRequests.set(key,request);return request;
+}
+async function hydrateEnemyLocations(list){
+ for(const r of list){
+  const sources=Array.isArray(r.groupedSources)?r.groupedSources:[r];
+  const names=[...new Set(sources.map(sourceParts).map(p=>p.enemy).filter(Boolean))];
+  if(!names.length)continue;
+  const found=new Array(names.length);let next=0;
+  await Promise.all(Array.from({length:Math.min(6,names.length)},async()=>{while(next<names.length){const i=next++,name=names[i];found[i]=[name,await lookupEnemyLocations(name)]}}));
+  let changed=false;
+  for(const [name,locations] of found){
+   if(!locations)continue;
+   const key=name.trim().toLowerCase().replace(/\s+/g,' ');
+   for(const source of sources)if(String(detailValue(source,'enemy','enemyname')||'').trim().toLowerCase().replace(/\s+/g,' ')===key){source.enemyLocations=locations;changed=true}
+  }
+  if(!changed)continue;
+  const card=[...results.querySelectorAll('.result')].find(el=>el.dataset.resultTitle===String(r.title||''));
+  if(!card)continue;
+  const open=[...card.querySelectorAll('details')].map(el=>el.open),holder=document.createElement('div');
+  holder.innerHTML=renderCard(r);const updated=holder.firstElementChild;if(!updated)continue;
+  [...updated.querySelectorAll('details')].forEach((el,i)=>{if(open[i])el.open=true});card.replaceWith(updated);
+ }
 }
 async function resolveWikiResult(r){
  const query=String(r.wikiQuery||'').trim();if(!query)return;
@@ -285,6 +341,7 @@ async function hydrateMissingImages(list){
    if(page?.thumbnail?.source){r.image=page.thumbnail.source;const card=[...results.querySelectorAll('.result')].find(el=>el.dataset.resultTitle===r.title);const image=card?.querySelector('.itemthumb');if(image){image.style.display='';image.src=r.image}}
   }catch(e){/* Optional live Wiki lookup; preserve the result if unavailable. */}
  }
+ await hydrateEnemyLocations(list);
 }
 function showState(t,b){results.innerHTML='<div class="empty"><strong>'+esc(t)+'</strong>'+esc(b)+'</div>';count.textContent='0 RESULTS'}
 let indexPromise,lastResults=[];
