@@ -7,6 +7,7 @@ DROP_URL = "https://raw.githubusercontent.com/WFCD/warframe-drop-data/main/data/
 MARKET_URL = "https://api.warframe.market/v2/items"
 WIKI_API = "https://wiki.warframe.com/api.php"
 ASSET_BASE = "https://warframe.market/static/assets/"
+RESOURCE_URL = "https://raw.githubusercontent.com/WFCD/warframe-items/master/data/json/Resources.json"
 os.makedirs("data", exist_ok=True)
 
 def fetch_json(url, timeout=120):
@@ -15,6 +16,13 @@ def fetch_json(url, timeout=120):
         return json.load(response)
 
 data = fetch_json(DROP_URL)
+catalog = fetch_json(RESOURCE_URL, timeout=35)
+resource_names = {
+    " ".join(str(item.get("name", "")).casefold().split())
+    for item in catalog
+    if isinstance(item, dict) and item.get("category") == "Resources" and item.get("name")
+}
+print(f"Loaded {len(resource_names)} resource names for accurate result grouping")
 image_by_name = {}
 try:
     market = fetch_json(MARKET_URL, timeout=35)
@@ -65,6 +73,14 @@ def add(title, details, chance=None, rarity=None, category="DROP DATA"):
         elif label == "Rotation" and not value.lower().startswith("rotation"): value = "Rotation " + value
         compact.append(value)
     compact = list(dict.fromkeys(compact))
+    detail_items = []
+    detail_seen = set()
+    for label, value in details:
+        value = clean(value)
+        key = (str(label).casefold(), value.casefold())
+        if value and key not in detail_seen:
+            detail_seen.add(key)
+            detail_items.append({"label": label, "value": value})
     try: chance_num = float(chance) if chance is not None else None
     except (TypeError, ValueError): chance_num = None
     relic_name, refinement = None, None
@@ -88,9 +104,10 @@ def add(title, details, chance=None, rarity=None, category="DROP DATA"):
     if key in seen: return
     seen.add(key)
     image = image_by_name.get(" ".join(title.casefold().split()))
+    is_resource = " ".join(title.casefold().split()) in resource_names
     records.append({
-        "title":title, "details":compact, "detailItems":[{"label":label,"value":clean(value)} for label,value in details if clean(value)], "chance":chance_num, "rarity":clean(rarity),
-        "category":category, "relic":relic_name, "refinement":refinement, "image":image,
+        "title":title, "details":compact, "detailItems":detail_items, "chance":chance_num, "rarity":clean(rarity),
+        "category":"RESOURCE" if is_resource else category, "relic":relic_name, "refinement":refinement, "image":image,
         "detail":" · ".join(compact + ([f"Chance {chance_num:g}%"] if chance_num is not None else []) + ([clean(rarity)] if rarity else []))
     })
 
