@@ -34,6 +34,14 @@ const compactRows=renderSourceRows([
 assert.equal((compactRows.match(/class="source-row"/g)||[]).length,4,'one farm location collapses to one summary row with expandable stage/rotation entries');
 assert.match(compactRows,/Show 3 drop entries/);
 assert.match(compactRows,/10%/);assert.match(compactRows,/20%/);assert.match(compactRows,/30%/);
+const regionRows=renderSourceRows([
+  {title:'Neurodes',chance:10,detailItems:[{label:'Planet',value:'Earth'},{label:'Node',value:'Everest'},{label:'Rotation',value:'A'}]},
+  {title:'Neurodes',chance:20,detailItems:[{label:'Planet',value:'Earth'},{label:'Node',value:'Coba'},{label:'Rotation',value:'B'}]},
+]);
+assert.match(regionRows,/Earth · 2 farm locations/);
+assert.match(regionRows,/View 2 locations/);
+assert.match(regionRows,/Everest/);assert.match(regionRows,/Coba/);
+assert.match(regionRows,/10%/);assert.match(regionRows,/20%/);
 assert.ok(fallbackImage('resource').startsWith('data:image/svg+xml,'), 'missing art receives a visible local fallback');
 const card = renderCard({ title: 'Neurodes', category: 'RESOURCE' });
 assert.match(card, /class="itemthumb thumb-resource"/);
@@ -58,3 +66,4 @@ assert.match(enemyRows, /Crewman \/ Earth – Coba/);
 assert.match(renderSourceRows([{title:'Redirection',detailItems:[{label:'Enemy',value:'Crewman'}]}]), /Crewman \/ Location not listed/);
 assert.match(html, /justify-content:center/);
 console.log('Core rule checks passed: resource classification, rotation grouping, image fallback and top placement, enemy locations, and unresolved-location labeling.');
+
