@@ -23,6 +23,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Check browser JavaScript syntax
+        run: python3 scripts/check_inline_js.py | node --check
       - name: Build local search index
         run: python3 scripts/build_index.py
       - name: Configure Pages
