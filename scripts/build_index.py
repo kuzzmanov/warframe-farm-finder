@@ -22,6 +22,14 @@ resource_names = {
     for item in catalog
     if isinstance(item, dict) and item.get("category") == "Resources" and item.get("name")
 }
+for source in data.get("resourceByAvatar", []):
+    if not isinstance(source, dict):
+        continue
+    for item in source.get("items", []):
+        if isinstance(item, dict):
+            name = item.get("item") or item.get("itemName")
+            if isinstance(name, str) and name and name.casefold() != "region resource":
+                resource_names.add(" ".join(name.casefold().split()))
 print(f"Loaded {len(resource_names)} resource names for accurate result grouping")
 image_by_name = {}
 try:
@@ -132,15 +140,16 @@ def walk(obj, path=None, section=None):
                    if key in context_labels and isinstance(value, (str, int, float))]
         title = next((obj.get(k) for k in name_keys if isinstance(obj.get(k), str) and obj.get(k).strip()), None)
         if title:
+            category = "RESOURCE" if section == "resourceByAvatar" else "RELIC" if section == "relics" else "DROP DATA"
             add(title, path + details, obj.get("chance", obj.get("dropChance", obj.get("dropChancePercent"))),
-                obj.get("rarity"), "RELIC" if section == "relics" else "DROP DATA")
+                obj.get("rarity"), category)
         tier, relic = obj.get("tier"), obj.get("relicName")
         if isinstance(tier, str) and isinstance(relic, str):
             add(f"{tier} {relic}", path + [("Tier",tier),("Relic",relic)], category="RELIC")
         for key, value in obj.items():
             if not isinstance(value, (dict, list)): continue
             next_path = path + details
-            next_section = key if key in ("missionRewards","relics","modLocations","miscItems","blueprintLocations","transientRewards") else section
+            next_section = key if key in ("missionRewards","relics","modLocations","miscItems","blueprintLocations","transientRewards","resourceByAvatar") else section
             if key not in skip_path_keys and not key.startswith("_"):
                 if key in ("A","B","C"): next_path.append(("Rotation",key))
                 elif key.isdigit(): next_path.append(("Stage",key))
