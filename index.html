@@ -119,12 +119,18 @@ function detailValue(r,...labels){
  return items.find(x=>wanted.includes(String(x.label||'').toLowerCase()))?.value||'';
 }
 function sourceParts(r){
- const planet=detailValue(r,'planet');
- const node=detailValue(r,'node');
+ const sourceValues=(Array.isArray(r.detailItems)?r.detailItems:[])
+  .filter(x=>String(x.label||'').toLowerCase()==='source')
+  .map(x=>String(x.value||'').trim()).filter(Boolean);
+ const mission=detailValue(r,'mission','gamemode','mode');
+ // WFCD's mission drop paths encode planet and node as two nested object keys.
+ // The builder labels both as Source; only interpret them as planet/node when a mission mode confirms that structure.
+ const hasMissionPath=!!mission&&sourceValues.length>=2;
+ const planet=detailValue(r,'planet')||(hasMissionPath?sourceValues[0]:'');
+ const node=detailValue(r,'node')||(hasMissionPath?sourceValues[1]:'');
  const enemy=detailValue(r,'enemy','enemyname','objective','objectivename','place');
  const location=detailValue(r,'location');
- const mission=detailValue(r,'mission','gamemode','mode');
- const source=detailValue(r,'source');
+ const source=sourceValues.find(x=>x!==planet&&x!==node)||detailValue(r,'source');
  const main=enemy||location||node||source||'Drop location';
  const place=[planet,node].filter(Boolean).join(' · ');
  const extras=[mission,detailValue(r,'stage'),detailValue(r,'rotation'),detailValue(r,'bounty')].filter(Boolean);
