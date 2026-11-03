@@ -130,10 +130,12 @@ function sourceParts(r){
  const node=detailValue(r,'node')||(hasMissionPath?sourceValues[1]:'');
  const enemy=detailValue(r,'enemy','enemyname','objective','objectivename','place');
  const location=detailValue(r,'location');
+ const bounty=detailValue(r,'bounty');
  const source=sourceValues.find(x=>x!==planet&&x!==node)||detailValue(r,'source');
- const main=enemy||location||node||source||'Drop location';
+ // Bounty records carry the human-readable farm activity in Bounty; the Source value is only an internal table key.
+ const main=enemy||location||node||bounty||source||'Drop location';
  const place=[planet,node].filter(Boolean).join(' · ');
- const extras=[mission,detailValue(r,'stage'),detailValue(r,'rotation'),detailValue(r,'bounty')].filter(Boolean);
+ const extras=[mission,detailValue(r,'stage'),detailValue(r,'rotation'),...(bounty&&main===bounty?[]:[bounty])].filter(Boolean);
  return {planet,node,enemy,location,mission,source,main,place,extras};
 }
 function chanceText(r){
