@@ -23,7 +23,9 @@ const grouped = groupDropSources([
   { title: 'Neurodes', detailItems: [{ label: 'Planet', value: 'Earth' }, { label: 'Node', value: 'Everest' }, { label: 'Rotation', value: 'B' }], chance: 10 },
 ]);
 assert.equal(grouped.length, 1, 'same item becomes one card');
-assert.equal(grouped[0].groupedSources.length, 2, 'duplicate source is removed while distinct rotations remain');
+assert.equal(grouped[0].groupedSources.length, 1, 'same source across rotations is summarized in one row');
+assert.equal([...grouped[0].groupedSources[0]._groupedRotations].sort().join(','), 'A,B', 'rotation labels are preserved in the summary');
+assert.match(renderCard(grouped[0]), /Rotation A, B/);
 assert.ok(fallbackImage('resource').startsWith('data:image/svg+xml,'), 'missing art receives a visible local fallback');
 assert.match(renderCard({ title: 'Neurodes', category: 'RESOURCE' }), /class="itemthumb thumb-resource"/);
 assert.match(html, /\.resultvisual\{align-self:start/);

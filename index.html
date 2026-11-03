@@ -107,11 +107,17 @@ function groupDropSources(list){
   const key=normalizeItemName(r.title);
   if(!key){out.push(r);continue}
   if(!groups.has(key)){const g={...r,groupedSources:[]};groups.set(key,g);out.push(g)}
-  const g=groups.get(key),sourceKey=sourceParts(r);
-  const signature=[sourceKey.planet,sourceKey.node,sourceKey.main,sourceKey.mission,...sourceKey.extras,r.chance].join('|').toLowerCase();
-  g._sourceSignatures=g._sourceSignatures||new Set();
-  if(g._sourceSignatures.has(signature))continue;
-  g._sourceSignatures.add(signature);g.groupedSources.push(r);
+  const g=groups.get(key),sourceKey=sourceParts(r),rotation=detailValue(r,'rotation')||sourceKey.extras.find(x=>/^rotation\s/i.test(x))||'';
+  const sharedExtras=sourceKey.extras.filter(x=>x!==rotation&&!/^rotation\s/i.test(x));
+  const signature=[sourceKey.planet,sourceKey.node,sourceKey.main,sourceKey.mission,...sharedExtras,r.chance].join('|').toLowerCase();
+  g._sourceMap=g._sourceMap||new Map();
+  if(g._sourceMap.has(signature)){
+   const previous=g._sourceMap.get(signature);
+   if(rotation){previous._groupedRotations=previous._groupedRotations||new Set();previous._groupedRotations.add(rotation.replace(/^rotation\s*/i,''))}
+   continue;
+  }
+  const groupedRecord=rotation?{...r,_groupedRotations:new Set([rotation.replace(/^rotation\s*/i,'')])}:r;
+  g._sourceMap.set(signature,groupedRecord);g.groupedSources.push(groupedRecord);
   if((r.chance??-1)>(g.chance??-1))g.chance=r.chance;
   if(!g.image&&r.image)g.image=r.image;
   g.score=Math.max(g.score||0,r.score||0);
@@ -155,7 +161,8 @@ function renderSourceRows(sources){
  return sources.map(r=>{
   const p=sourceParts(r),chance=chanceText(r);
   const title=[p.planet,p.main].filter(Boolean).join(' · ');
-  const meta=[p.mission,...p.extras.filter(x=>x!==p.mission)].filter(Boolean).join(' · ');
+  const rotations=r._groupedRotations?.size?'Rotation '+[...r._groupedRotations].sort().join(', '):'';
+  const meta=[p.mission,...p.extras.filter(x=>x!==p.mission&&x!==detailValue(r,'rotation')&&!/^rotation\s/i.test(x)),rotations].filter(Boolean).join(' · ');
   return '<div class="source-row"><div><div class="source-location">'+esc(title||'Location not specified')+'</div>'+(meta?'<div class="source-meta">'+esc(meta)+'</div>':'')+'</div>'+(chance?'<div class="source-chance">'+esc(chance)+'</div>':'')+'</div>';
  }).join('');
 }
