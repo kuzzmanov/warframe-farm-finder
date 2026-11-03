@@ -186,7 +186,7 @@ async function resolveWikiResult(r){
    const titleLink=card.querySelector('.wiki-result-link');if(titleLink){titleLink.textContent=r.title;titleLink.href=r.url}
    const excerpt=card.querySelector('[data-wiki-excerpt]');if(excerpt&&r.extract)excerpt.textContent=r.extract;
    card.dataset.resultTitle=r.title;
-   const image=card.querySelector('.itemthumb');if(image&&r.image){image.style.display='';image.src=r.image}
+   const image=card.querySelector('.itemthumb');if(image&&r.image){if(image.tagName==='IMG'){image.style.display='';image.src=r.image}else{image.outerHTML='<img class="itemthumb thumb-wiki" src="'+esc(r.image)+'" alt="" loading="lazy" onerror="this.classList.add(\\'image-missing\\');this.removeAttribute(\\'src\\')">'}}
   }
  }catch(e){/* Keep the useful fallback if Wiki lookup is unavailable. */}
 }
