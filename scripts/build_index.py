@@ -119,6 +119,8 @@ def walk(obj, path=None, section=None):
         if isinstance(tier, str) and isinstance(relic, str):
             add(f"{tier} {relic}", path + [("Tier",tier),("Relic",relic)], category="RELIC")
         for key, value in obj.items():
+            # Avatar resource metadata is not a farm source and must not be indexed at all.
+            if key == "resourceByAvatar": continue
             if not isinstance(value, (dict, list)): continue
             next_path = path + details
             next_section = key if key in ("missionRewards","relics","modLocations","miscItems","blueprintLocations","transientRewards") else section
