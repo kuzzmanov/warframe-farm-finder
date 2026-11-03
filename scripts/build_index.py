@@ -50,7 +50,7 @@ name_keys = ("itemName", "modName", "item_name", "item", "name", "title")
 skip_path_keys = {"missionRewards", "modLocations", "miscItems", "blueprintLocations", "transientRewards", "rewards", "drops", "items"}
 context_labels = {
     "planet":"Planet", "mission":"Mission", "node":"Node", "gameMode":"Mode",
-    "enemyName":"Enemy", "place":"Location", "objectiveName":"Objective",
+    "enemyName":"Enemy", "place":"Location", "source":"Source", "objectiveName":"Objective",
     "bountyLevel":"Bounty", "stage":"Stage", "rotation":"Rotation",
     "syndicate":"Syndicate", "location":"Location", "state":"State",
     "tier":"Tier", "relicName":"Relic"
@@ -104,7 +104,9 @@ def add(title, details, chance=None, rarity=None, category="DROP DATA"):
     if key in seen: return
     seen.add(key)
     image = image_by_name.get(" ".join(title.casefold().split()))
-    is_resource = " ".join(title.casefold().split()) in resource_names
+    normalized_title = " ".join(title.casefold().split())
+    quantity_match = re.match(r"^\d[\d,]*x\s+(.+)$", normalized_title, re.I)
+    is_resource = normalized_title in resource_names or bool(quantity_match and quantity_match.group(1) in resource_names)
     records.append({
         "title":title, "details":compact, "detailItems":detail_items, "chance":chance_num, "rarity":clean(rarity),
         "category":"RESOURCE" if is_resource else category, "relic":relic_name, "refinement":refinement, "image":image,
